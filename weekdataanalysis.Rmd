@@ -1,0 +1,189 @@
+周分析数据
+========================================================
+
+
+```{r echo=FALSE}
+#setwd("C:/")
+crude <- read.csv("50.csv",header=TRUE,skip=1,nrows=65)
+#head(crude)
+heji <- crude[1,]
+
+
+crude <- crude[-1,]
+
+#获取分病种的行数
+bigcat <-substr(as.character(crude[,1]),1,1)=="　"
+
+#去除分病种
+mybiglei<- crude[!bigcat,]
+#write.csv(biglei,"big.csv")
+
+#去除最后两行空白
+#mybiglei <-biglei[!(biglei$疾病病种==""),]
+
+#define function=======================
+#连接病例情况，没有百分比，只是新增和减少，比如麻疹（2/0）
+linknope <- function(df,last,lastp){
+  newziduan <- vector()
+  for (i in (1:nrow(df))){
+    newziduan <- paste(newziduan,df[i,1],"（",df[i,last],"/",df[i,lastp],"）","、",sep="")
+  }
+  substr(newziduan,nchar(newziduan),nchar(newziduan))<-"；"
+  return(newziduan)
+}
+
+
+#连接病例情况，有百分比，比如麻疹（20.88%，20/18）
+linkper <-function(df,lastp,last){
+  incrziduan <- vector()
+  for (i in seq(nrow(df))){
+    incrziduan <- paste(incrziduan,df[i,1],"（",format(df[i,lastp],nsmall=2),"%","，",df[i,2],"/",df[i,last],"）","、",sep="")
+  } 
+  substr(incrziduan,nchar(incrziduan),nchar(incrziduan))<-"；"
+  return(incrziduan)
+}
+
+
+a <- NULL
+b <- NULL
+c <- NULL
+d <- NULL
+e <- NULL
+f <- NULL
+g <- NULL
+h <- NULL
+i <- NULL
+j <- NULL
+  
+# Section TWO 于上期比---------------------------------
+#本期或上期都有病例的数据
+
+biglei <- mybiglei[mybiglei$本期发病数!=0 | mybiglei$上期发病数!=0,]
+
+#新发病种
+newbiglei <- biglei[biglei$上期发病数==0,]
+if (nrow(newbiglei)>0) {
+  a <-linknope(newbiglei,2,3)
+  a <-paste("新增病种为",a)
+  } else {
+    a <- "无新增病种；"
+  }
+
+#减少病种
+jianbiglei <- biglei[biglei$本期发病数==0,]
+if(nrow(jianbiglei)>0) {
+  b <- linknope(jianbiglei,2,3)
+  b <-paste("减少的病种为",b)
+  } else {
+    b <-"无减少病种；"
+  }
+
+#发病上升的病种
+incr <- biglei[biglei$本期发病数!=0 & biglei$上期发病数!=0,]
+incr$与上期比. <- round(as.numeric(as.character(incr$与上期比.)),digits=2)
+incr <-incr[order(incr$与上期比.,decreasing = TRUE),]
+tureincr <- incr[incr$与上期比.>0,]
+c<- linkper(tureincr,4,3)
+
+#发病数不变的病种
+nochange <- biglei[biglei$本期发病数!=0 & biglei$上期发病数!=0 & 
+                     (biglei$本期发病数==biglei$上期发病数),]
+nochange <-nochange[order(nochange$本期发病数,decreasing = TRUE),]
+i<- linknope(nochange,2,3)
+
+#发病率下降的病种
+turedecr <-incr[incr$与上期比.<0,]
+#turedecr$与上期比. <-turedecr$与上期比.*(-1)
+turedecr <- turedecr[order(turedecr$与上期比.,decreasing = FALSE),]
+d <- linkper(turedecr,4,3)
+
+#把上面生成的字段合并成一个字段
+alln <- paste("与上期比，发病数上升病种依次为",
+              c,
+              "发病数不变的病种为",
+              i,
+              "发病数减少病种依次为",
+              d,
+              a,              
+              b,
+              sep="")
+
+
+alln <- gsub(" ","",alln)
+
+
+#本期或去年同期都有病例的数据
+lastyear <- mybiglei[mybiglei$本期发病数!=0 | mybiglei$去年同期发病数!=0,]
+#write.csv(lastyear,"lastyear.csv")
+
+#新发病种
+newbiglei <- lastyear[lastyear$去年同期发病数==0,]
+if (nrow(newbiglei)>0) {
+  e <-linknope(newbiglei,2,5)
+  e <-paste("新增病种为",e)
+  } else {
+    e <- "无新增病种。"
+  }
+#e <- linknope(newbiglei,2,5)
+
+#减少病种
+jianbiglei <- lastyear[lastyear$本期发病数==0,]
+if (nrow(jianbiglei)>0) {
+  f<-linknope(jianbiglei,2,5)
+  f <-paste("减少的病种为",f)
+  } else {
+   f <- "无减少的病种。"
+  }
+#f <- linknope(jianbiglei,2,5)
+
+#发病上升的病种
+incr <- lastyear[lastyear$本期发病数!=0 & lastyear$去年同期发病数!=0,]
+#write.csv(incr,"incr.csv")
+incr$与去年同期比...<- round(as.numeric(as.character(incr$与去年同期比...)),digits=2)
+incr <-incr[order(incr$与去年同期比...,decreasing = TRUE),]
+tureincr <- incr[incr$与去年同期比...>0,1:6]
+
+#与去年同期比上升
+g <- linkper(tureincr,6,5)
+
+#发病数相同
+lnochange <- lastyear[lastyear$本期发病数!=0 & lastyear$去年同期发病数!=0 & 
+                     (lastyear$本期发病数==lastyear$去年同期发病数),]
+lnochange <-lnochange[order(lnochange$本期发病数,decreasing = TRUE),]
+j<- linknope(lnochange,2,5)
+
+
+#与去年同期比下降
+turede <- incr[incr$与去年同期比...<0,1:6]
+turede$与去年同期比... <-turede$与去年同期比...
+turede <- turede[order(turede$与去年同期比...,decreasing = FALSE),]
+h <- linkper(turede,6,5)
+
+
+alll <- paste("与去年同期比，发病数上升病种依次为",
+              g,
+              "发病数不变的病种为",
+              j,
+              "发病数减少病种依次为",
+              h,
+              e,             
+              f,
+              sep="")
+
+
+alll <- gsub(" ","",alll)
+alln
+alll
+```
+
+```{r echo=FALSE}
+shuliang <- nrow(mybiglei[mybiglei$本期发病数!=0,])
+mybiglei <-mybiglei[order(mybiglei[,2],decreasing = TRUE),]
+five <- mybiglei[1:5,1:2]
+#five$本期发病数
+hejifive <- sum(five$本期发病数)
+percent <- round(hejifive/heji[1,2]*100,digits=2)
+```
+
+本周网络直报系统共报告现住址为嘉兴市的甲乙丙类传染病`r shuliang`种共`r heji[1,2]`例，比上周**上升**`r round(as.numeric(as.character(heji[1,4])),digits=2)`%，比去年同期**上升**`r round(as.numeric(as.character(heji[1,6])),digits=2)`%；本期死亡`r heji[1,"本期死亡数"]`例，为**xx病例**。传染病报告发病数居前五位的依次是：`r five[1,1]`、`r five[2,1]`、`r five[3,1]`、`r five[4,1]`、`r five[5,1]`，共占发病总数的`r percent`%。
+
