@@ -4,7 +4,7 @@
 
 ```{r echo=FALSE}
 #setwd("C:/")
-crude <- read.csv("50.csv",header=TRUE,skip=1,nrows=65)
+crude <- read.csv("52.csv",header=TRUE,skip=1,nrows=65)
 #head(crude)
 heji <- crude[1,]
 
