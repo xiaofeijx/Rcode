@@ -1,15 +1,20 @@
 ---
-title: "ç½‘ç»œæŠ¥å‘Šæ•°æ®æ£€æŸ¥"
-output: html_document
+title: "´«È¾²¡±¨¸æ¿¨¼ì²é<ae><bb><a5>"
+output:
+  html_document: default
 ---
 
+2015Äê2ÔÂ15ÈÕ
 
-
-```{r echo=FALSE}
+```{r echo=FALSE,warning=FALSE,message=FALSE,tidy=TRUE}
 library(dplyr)
-df <- read.csv("Report.csv",skip=2,header=T,stringsAsFactors=F,na.strings = ".")
+library(xtable)
+df <- read.csv("report.csv",header=T,stringsAsFactors=F,na.strings = ".")
+if (nchar(df[1,19])== 17 ) #Èç¹ûÓÃEXCElĞŞ¸Ä²¢±£´æ£¬Ê±¼ä¸ñÊ½»á±ä»¯
+{  
+  df <- read.csv("Report.csv",skip=2,header=T,stringsAsFactors=F,na.strings = ".")
 #head(df)
-str(df)
+#str(df)
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format="%Y-%m-%d %H:%M:")
 df[,26] <- as.POSIXct(df[,26])
@@ -19,42 +24,119 @@ df[,34] <- as.POSIXct(df[,34],format="%Y-%m-%d %H:%M:")
 df[,35] <- as.POSIXct(df[,35],format="%Y-%m-%d %H:%M:")
 df[,37] <- as.POSIXct(df[,37],format="%Y-%m-%d %H:%M:")
 df[,38] <- as.POSIXct(df[,38],format="%Y-%m-%d %H:%M:")
+} else 
+  {
+    df[,18] <- as.POSIXct(df[,18])
+    df[,26] <- as.POSIXct(df[,26])
+df[,19] <- as.POSIXct(df[,19],format="%Y/%m/%d %H:%M")
+df[,30] <- as.POSIXct(df[,30],format="%Y/%m/%d %H:%M")
+df[,33] <- as.POSIXct(df[,33],format="%Y/%m/%d %H:%M")
+df[,34] <- as.POSIXct(df[,34],format="%Y/%m/%d %H:%M")
+df[,35] <- as.POSIXct(df[,35],format="%Y/%m/%d %H:%M")
+df[,37] <- as.POSIXct(df[,37],format="%Y/%m/%d %H:%M")
+df[,38] <- as.POSIXct(df[,38],format="%Y/%m/%d %H:%M")
+  }
+
+
 #nchar(df[,9])
-df$age <- ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="å²",
+df$age <- ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="Ëê",
               as.numeric(substr(df[,9],1,nchar(df[,9])-1)),
               as.numeric(substr(df[,9],1,nchar(df[,9])-1))/12)
+df$±¨¸æµ¥Î» <- gsub(" ","",df$±¨¸æµ¥Î»)
 
 ```
-##æŠ¥å‘Šç—…ç§ç»Ÿè®¡
-```{r echo=FALSE}
-df_df <- group_by(df,ç–¾ç—…åç§°)
-summarise(df_df,æ•°é‡=n())
+**±¨¸æ²¡ÖÖÍ³¼Æ**
+```{r echo=FALSE,results='asis'}
+df_df <- group_by(df,¼²²¡Ãû³Æ)
+smdf <- summarise(df_df,count=n())
+arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html")
 ```
 
-ç”²ç±»ä¸ç”²ç±»ä¼ æŸ“ç—…æŠ¥å‘Šæ—¶é™æ£€æŸ¥>=2å°æ—¶
+
+**ÉÙ¼û²¡ÖÖÏÔÊ¾**
 ```{r}
-classone <- df[,21] %in% c("é¼  ç–«","éœ ä¹±","ä¼ æŸ“æ€§éå…¸","è„Š ç°","è‚ºç‚­ç–½")
-df[difftime(df[,30],df[,19],units="hours") >= 2 & classone, c(4,7,9,14,19,21,28)]
+commondisease <- c("°¬×Ì²¡","£È£É£Ö","¼×¸Î","ÒÒ¸Î","±û¸Î","Îì¸Î","¸ÎÑ×£¨Î´·ÖĞÍ£©","Ï¸¾úĞÔÁ¡¼²","ÉË º®","¸±ÉËº®","ĞÉ ºì ÈÈ","ÁÜ    ²¡","¢ñÆÚÃ·¶¾","¢òÆÚÃ·¶¾","IIIÆÚÃ·¶¾","Ì¥´«Ã·¶¾","ÒşĞÔÃ·¶¾","Á÷ĞĞĞÔ¸ĞÃ°","Á÷ĞĞĞÔÈùÏÙÑ×","·çÕî","¼±ĞÔ³öÑªĞÔ½áÄ¤Ñ×","¼âÈñÊªğà","ÉúÖ³Æ÷ğåÕî","½áºËĞÔĞØÄ¤Ñ×","Ë®¶»","ÉúÖ³µÀÉ³ÑÛÒÂÔ­Ìå¸ĞÈ¾","ÆäËü¼²²¡:","ÊÖ×ã¿Ú²¡","ÆäËü¸ĞÈ¾ĞÔ¸¹Ğº²¡","Í¿£¨+£©","¾ú£¨-£©","Î´Ìµ¼ì")
+rarefilter <- !(df$¼²²¡Ãû³Æ %in% commondisease)
+select(df,c(4,7,9,14,19,21,28,30)) %>% filter(rarefilter) 
 ```
 
-æ‰€æœ‰æŠ¥å‘Šç–¾ç—…æŠ¥å‘Šæ—¶é™æ£€æŸ¥>=24å°æ—¶
+
+**¼×ÀàÓë¼×Àà´«È¾²¡±¨¸æÊ±ÏŞ¼ì²é>=2Ğ¡Ê±**
+```{r}
+classone <- df[,21] %in% c("Êó Òß","»ô ÂÒ","´«È¾ĞÔ·Çµä","¼¹ »Ò","·ÎÌ¿¾Ò")
+select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$±¨¸æ¿¨Â¼ÈëÊ±¼ä,df$Õï¶ÏÊ±¼ä,units="hours") >= 2 & classone)
+
+```
+
+
+**ËùÓĞ±¨¸æ¼²²¡±¨¸æÊ±ÏŞ¼ì²é>=24Ğ¡Ê±**
 ```{r, echo=FALSE}
 df[difftime(df[,30],df[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
+select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$±¨¸æ¿¨Â¼ÈëÊ±¼ä,df$Õï¶ÏÊ±¼ä,units="hours") >= 2 & classone)
 ```
 
-è®¢æ­£æŠ¥å‘Šå¡æ—¶é™æ£€æŸ¥ï¼ˆå«ç”²ä¹™ç±»ï¼‰
+
+**¶©Õı±¨¸æ¿¨Ê±ÏŞ¼ì²é£¨º¬¼×ÒÒÀà£©**
 ```{r}
 modifieddf <- df[!is.na(df[,37]),]
-mclassone <- modifieddf[,21] %in% c("é¼  ç–«","éœ ä¹±","ä¼ æŸ“æ€§éå…¸","è„Š ç°","è‚ºç‚­ç–½")
+mclassone <- modifieddf[,21] %in% c("Êó Òß","»ô ÂÒ","´«È¾ĞÔ·Çµä","¼¹ »Ò","·ÎÌ¿¾Ò")
 modifieddf[difftime(modifieddf[,38],modifieddf[,37],units="hours") >= 2 & mclassone, c(4,7,9,14,19,21,28)]
 
 modifieddf[difftime(modifieddf[,30],modifieddf[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
 ```
 
 
+**ÄêÁäÓëÖ°Òµ¹ØÏµ**
+```{r}
+#14ËêÒÔÏÂÖ»ÄÜÊÇ:É¢¾Ó¡¢Ó×ÍĞºÍÑ§Éú
+agefilter1 <- !(df$Ö°Òµ %in% c("É¢¾Ó¶ùÍ¯","Ó×ÍĞ¶ùÍ¯","Ñ§Éú")) & df$age <14
+select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter1)
+```
 
 
-å¹´é¾„ä¸èŒä¸šå…³ç³»
-èŒä¸šä¸å•ä½
+```{r}
+#ÊÇ3ËêÒÔÏÂÊÇÉ¢¾Ó¶ùÍ¯
+agefilter2 <- (!(df$Ö°Òµ %in% c("É¢¾Ó¶ùÍ¯")) & df$age<3) | ((df$Ö°Òµ %in% c("É¢¾Ó¶ùÍ¯")) & df$age>=5) 
+select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter2)
+```
 
-ç—…ç§ä¸åˆ†ç±»çš„å…³ç³»
+
+```{r}
+#4Ëêµ½6ËêÎªÎªÓ×ÍĞ¶ùÍ¯
+agefilter3 <- !(df$Ö°Òµ %in% c("Ó×ÍĞ¶ùÍ¯")) & (df$age>4 & df$age <=6) | ((df$Ö°Òµ %in% c("Ó×ÍĞ¶ùÍ¯")) & df$age>=7)
+select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter3)
+```
+
+
+```{r}
+#7-14ËêÎªÑ§Éú
+agefilter4 <- !(df$Ö°Òµ %in% c("Ñ§Éú")) & (df$age>=7 & df $age <=14)
+select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter4)
+```
+
+
+**Ö°ÒµÓëµ¥Î»**
+```{r}
+occufilter <- (df$Ö°Òµ %in% c("Ó×ÍĞ¶ùÍ¯","Ñ§Éú","¸É²¿Ö°Ô±","¹¤ÈË","Ãñ¹¤","½ÌÊ¦","Ò½ÎñÈËÔ±")) & (nchar(df$»¼Õß¹¤×÷µ¥Î»)<=2 | (df$»¼Õß¹¤×÷µ¥Î»=="²»Ïê") |(df$»¼Õß¹¤×÷µ¥Î»=="ÎŞ"))
+select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(occufilter)
+```
+
+
+**²¡ÖÖÓë·ÖÀàµÄ¹ØÏµ**
+```{r}
+yigan <- (df$¼²²¡Ãû³Æ == "ÒÒ¸Î") & !(df$²¡Àı·ÖÀà %in% c("ÊµÑéÊÒÈ·Õï²¡Àı","²¡Ô­Ğ¯´øÕß"))
+afp <- (df$¼²²¡Ãû³Æ == "AFP") & (df$²¡Àı·ÖÀà !="ÁÙ´²Õï¶Ï²¡Àı")
+weitanjian <- (df$¼²²¡Ãû³Æ == "Î´Ìµ¼ì") & (df$²¡Àı·ÖÀà !="ÒÉËÆ²¡Àı")
+tuyang <- (df$¼²²¡Ãû³Æ == "Í¿£¨+£©") & (df$²¡Àı·ÖÀà !="ÊµÑéÊÒÈ·Õï²¡Àı")
+junying <- (df$¼²²¡Ãû³Æ == "¾ú£¨-£©") & (df$²¡Àı·ÖÀà !="ÁÙ´²Õï¶Ï²¡Àı")
+sexdisease <-  (df$¼²²¡Ãû³Æ %in% c("¢ñÆÚÃ·¶¾","¢òÆÚÃ·¶¾","IIIÆÚÃ·¶¾","Ì¥´«Ã·¶¾","ÒşĞÔÃ·¶¾","ÁÜ    ²¡")) & (df$²¡Àı·ÖÀà !="ÊµÑéÊÒÈ·Õï²¡Àı")
+diseasefilter <- yigan | afp | weitanjian | tuyang | junying | sexdisease 
+select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(diseasefilter)
+```
+
+**²»ÏêÏçÕò**
+```{r}
+addressfilter <- grep("²»Ïê",df$ÏÖ×¡ÏêÏ¸µØÖ·)
+df[addressfilter,c(4,7,9,10,14,15,19,21,28,30)]
+
+```
