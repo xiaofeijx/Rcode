@@ -1,10 +1,14 @@
 ---
-title: "传染病报告卡检查<ae><bb><a5>"
+title: "abc"
 output:
-  html_document: default
+  html_document:
+    css: style.css
+    theme: readable
+  word_document: default
 ---
 
 2015年2月15日
+
 ```{r echo=FALSE,warning=FALSE,message=FALSE,tidy=TRUE}
 library(dplyr)
 library(xtable)
@@ -60,7 +64,7 @@ arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html"
 
 **少见病种显示**
 ```{r}
-commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检")
+commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻 疹")
 rarefilter <- !(df$疾病名称 %in% commondisease)
 select(df,c(4,7,9,14,19,21,28,30)) %>% filter(rarefilter) 
 ```
