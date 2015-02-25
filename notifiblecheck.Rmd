@@ -7,22 +7,18 @@ output:
   word_document: default
 ---
 
-2015年2月15日
+
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE,tidy=TRUE}
 library(dplyr)
 library(xtable)
+library(lubridate)
 ```
-
 
 ```{r echo=FALSE,tidy=TRUE}
 
-df <- read.csv("report.csv",header=T,stringsAsFactors=F,na.strings = ".")
-if (substr(df[1,19],nchar(df[1,19]),nchar(df[1,19])) ==":") #如果用EXCEl修改并保存，时间格式会变化
-{  
-  df <- read.csv("Report.csv",skip=2,header=T,stringsAsFactors=F,na.strings = ".")
-#head(df)
-#str(df)
+df <- read.csv("Report.csv",header=T,stringsAsFactors=F,na.strings = ".")
+
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format="%Y-%m-%d %H:%M:")
 df[,26] <- as.POSIXct(df[,26])
@@ -32,19 +28,6 @@ df[,34] <- as.POSIXct(df[,34],format="%Y-%m-%d %H:%M:")
 df[,35] <- as.POSIXct(df[,35],format="%Y-%m-%d %H:%M:")
 df[,37] <- as.POSIXct(df[,37],format="%Y-%m-%d %H:%M:")
 df[,38] <- as.POSIXct(df[,38],format="%Y-%m-%d %H:%M:")
-} else 
-  {
-    message("csv文件被修改保存过，可能不能运行!!!!")
-    df[,18] <- as.POSIXct(df[,18])
-    df[,26] <- as.POSIXct(df[,26])
-df[,19] <- as.POSIXct(df[,19],format="%Y/%m/%d %H:%M")
-df[,30] <- as.POSIXct(df[,30],format="%Y/%m/%d %H:%M")
-df[,33] <- as.POSIXct(df[,33],format="%Y/%m/%d %H:%M")
-df[,34] <- as.POSIXct(df[,34],format="%Y/%m/%d %H:%M")
-df[,35] <- as.POSIXct(df[,35],format="%Y/%m/%d %H:%M")
-df[,37] <- as.POSIXct(df[,37],format="%Y/%m/%d %H:%M")
-df[,38] <- as.POSIXct(df[,38],format="%Y/%m/%d %H:%M")
-  }
 
 
 #nchar(df[,9])
@@ -56,6 +39,11 @@ df$报告单位 <- gsub(" ","",df$报告单位)
 df$现住详细地址 <- substr(df$现住详细地址,7,nchar(df$现住详细地址))
 
 ```
+```{r echo=FALSE,}
+if (wday(today())==1) message("今天要查重")
+```
+
+
 **报告病种统计**
 ```{r echo=FALSE,results='asis'}
 df_df <- group_by(df,疾病名称)
