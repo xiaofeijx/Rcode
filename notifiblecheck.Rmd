@@ -145,7 +145,7 @@ diseasefilter <- shiyanshi | lingchuang | yishi | yigan
 select(df,c(4,7,9,10,15,21,16,28)) %>% filter(diseasefilter)
 
 #病种与急慢性
-jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 !="未分类")
+jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 =="未分类")
 select(df,c(4,7,9,10,17,19,21,28,30)) %>% filter(diseasefilter)
 ```
 
