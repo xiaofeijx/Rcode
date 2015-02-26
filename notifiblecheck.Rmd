@@ -165,7 +165,7 @@ select(df,c(4,7,9,16,21,46)) %>% filter(beizhufilter)
 
 **电话号码检查**
 ```{r}
-#显示电话号码不是11位或8位的报卡
+#显示电话号码不是11位或8位的报卡,但不现实电话号码为空的报卡
 phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 & !is.na(df$联系电话)
 select(df,c(4,7,9,11,28)) %>% filter(phonenumber)
 ```
