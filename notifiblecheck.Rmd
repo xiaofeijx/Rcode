@@ -96,28 +96,28 @@ modifieddf[difftime(modifieddf[,30],modifieddf[,19],units="days") >= 1, c(4,7,9,
 ```{r}
 #显示14岁以下，不是散居、幼托和学生
 agefilter1 <- !(df$职业 %in% c("散居儿童","幼托儿童","学生")) & df$age <14
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter1)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter1)
 ```
 
 
 ```{r}
 #显示3岁以下不是散居和5岁以上为散居
 agefilter2 <- (!(df$职业 %in% c("散居儿童")) & df$age<=3) | ((df$职业 %in% c("散居儿童")) & df$age>=5) 
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter2)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter2)
 ```
 
 
 ```{r}
 #显示4岁到6岁不是幼托儿童，显示7岁以上为幼托儿童
 agefilter3 <- !(df$职业 %in% c("幼托儿童")) & (df$age>4 & df$age <=6) | ((df$职业 %in% c("幼托儿童")) & df$age>=7)
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter3)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter3)
 ```
 
 
 ```{r}
 #显示7-14岁不是学生
 agefilter4 <- !(df$职业 %in% c("学生")) & (df$age>=7 & df $age <=14)
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter4)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter4)
 ```
 
 
@@ -128,23 +128,24 @@ occufilter <- (df$职业 %in% c("幼托儿童","学生","干部职员","工人",
 select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(occufilter)
 
 #填了单位，但职业不对的
-occufilter2 <- !(df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & (nchar(df$患者工作单位) >=2 &  !(df$患者工作单位=="无"))
-select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(occufilter2)
+occufilter2 <- !(df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员","离退人员")) & (nchar(df$患者工作单位) >=2 &  !(df$患者工作单位=="无"))
+select(df,c(4,7,9,10,15,21)) %>% filter(occufilter2)
 ```
 
 
 **病种与分类的关系**
 ```{r}
 #病种与诊断分类
-shiyanshi <- ((df$疾病名称 %in% c("乙肝","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","ＨＩＶ","涂（+）","仅培阳","脊    灰")) & !(df$病例分类 %in% c("实验室确诊病例")))
+shiyanshi <- ((df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","ＨＩＶ","涂（+）","仅培阳","脊    灰")) & !(df$病例分类 %in% c("实验室确诊病例")))
 lingchuang <- (df$疾病名称 %in% c("AFP","菌（-）")) & (df$病例分类 !="临床诊断病例")
 yishi <- (df$疾病名称 == "未痰检") & (df$病例分类 !="疑似病例")
+yigan <- df$疾病名称== "乙肝" & !(df$病例分类 %in% c("实验室确诊病例","病原携带者"))
 
-diseasefilter <- shiyanshi | lingchuang | yishi
-select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(diseasefilter)
+diseasefilter <- shiyanshi | lingchuang | yishi | yigan
+select(df,c(4,7,9,10,15,21,16,28)) %>% filter(diseasefilter)
 
 #病种与急慢性
-jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 =="未分类")
+jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 !="未分类")
 select(df,c(4,7,9,10,17,19,21,28,30)) %>% filter(diseasefilter)
 ```
 
@@ -158,10 +159,10 @@ df[addressfilter,c(4,7,9,10,14,15,19,21,28,30)]
 **备注检测**
 ```{r}
 #流行性感冒、其他感染性腹泻病病例中，如为实验室确诊病例，须在备注栏中填写具体的病原分型；输入性疟疾、登革热等疾病须注明输入地。卵型疟、三日疟报于疟疾“未分型”中，同时在备注栏中注明
-beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病") & (df$病例分类 =="实验室确诊病例")
-beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热")
+beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病") & (df$病例分类 =="实验室确诊病例") & nchar(df$备注) <2
+beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & nchar(df$备注) <=2
 beizhufilter <- beizhufilter1 | beizhufilter2
-select(df,c(4,7,9,16,21,46)) %>% filter(beizhufilter)
+select(df,c(4,7,9,16,21,28,46)) %>% filter(beizhufilter)
 ```
 
 **电话号码检查**
