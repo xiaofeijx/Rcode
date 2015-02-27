@@ -2,7 +2,6 @@
 title: "abc"
 output:
   html_document:
-    css: style.css
     theme: readable
   word_document: default
 ---
