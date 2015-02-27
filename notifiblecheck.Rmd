@@ -39,7 +39,8 @@ df$age <- ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="岁",
 df$报告单位 <- gsub(" ","",df$报告单位)
 
 df$现住详细地址 <- substr(df$现住详细地址,7,nchar(df$现住详细地址))
-
+totaldf <- df
+df <- df[df$审核状态 != "已删除卡",]
 ```
 ```{r echo=FALSE,}
 #如果是星期天，则提示要查重
@@ -68,8 +69,8 @@ select(df,c(4,7,9,14,19,21,28,30)) %>% filter(rarefilter)
 **甲类与甲类传染病报告时限检查>=2小时**
 ```{r}
 #显示甲类与按甲类报告的疾病报告与诊断时间超过2小时
-classone <- df[,21] %in% c("鼠  疫","霍 乱","传染性非典","脊    灰","肺炭疽")
-select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 2 & classone)
+classone <- totaldf[,21] %in% c("鼠  疫","霍 乱","传染性非典","脊    灰","肺炭疽")
+select(totaldf,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 2 & classone)
 
 ```
 
@@ -77,15 +78,15 @@ select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$报告卡录入时间,
 **所有报告疾病报告时限检查>=24小时**
 ```{r}
 #显示报告时间大于24小时的疾病
-df[difftime(df[,30],df[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
-select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 2 & classone)
+totaldf[difftime(totaldf[,30],totaldf[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
+select(totaldf,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 2 & classone)
 ```
 
 
 **订正报告卡时限检查（含甲乙类）**
 ```{r}
 #显示订正报告为甲类传染病，报告时间超过2小时
-modifieddf <- df[!is.na(df[,37]),]
+modifieddf <- totaldf[!is.na(totaldf[,37]),]
 mclassone <- modifieddf[,21] %in% c("鼠 疫","霍 乱","传染性非典","脊    灰","肺炭疽")
 modifieddf[difftime(modifieddf[,38],modifieddf[,37],units="hours") >= 2 & mclassone, c(4,7,9,14,19,21,28)]
 
@@ -104,7 +105,7 @@ select(df,c(4,7,9,15,21)) %>% filter(agefilter1)
 
 ```{r}
 #显示3岁以下不是散居和5岁以上为散居
-agefilter2 <- (!(df$职业 %in% c("散居儿童")) & df$age<=3) | ((df$职业 %in% c("散居儿童")) & df$age>=5) 
+agefilter2 <- (!(df$职业 %in% c("散居儿童")) & df$age < 3) | ((df$职业 %in% c("散居儿童")) & df$age>=5) 
 select(df,c(4,7,9,15,21)) %>% filter(agefilter2)
 ```
 
@@ -126,7 +127,7 @@ select(df,c(4,7,9,15,21)) %>% filter(agefilter4)
 **职业与单位**
 ```{r}
 #幼托儿童,学生,干部职员,工人,民工,教师,医务人员不填单位：
-occufilter <- (df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & (nchar(df$患者工作单位)<=2 | (df$患者工作单位=="不详") |(df$患者工作单位=="无"))
+occufilter <- (df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & (nchar(df$患者工作单位)<=2 | (df$患者工作单位=="不详") |(df$患者工作单位=="无") |(df$患者工作单位=="不清楚"))
 select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(occufilter)
 
 #填了单位，但职业不再上述列表里的
@@ -141,13 +142,17 @@ select(df,c(4,7,9,10,15,21)) %>% filter(occufilter2)
 #只能实验室诊断
 shiyanshi <- ((df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","ＨＩＶ","涂（+）","仅培阳","脊    灰")) & !(df$病例分类 %in% c("实验室确诊病例")))
 #只能临床诊断
-lingchuang <- (df$疾病名称 %in% c("AFP","菌（-）")) & (df$病例分类 !="临床诊断病例")
+lingchuang <- (df$疾病名称 %in% c("AFP","菌（-）","猩 红 热","流行性腮腺炎")) & (df$病例分类 !="临床诊断病例")
 #只能疑似病例
-yishi <- (df$疾病名称 == "未痰检") & (df$病例分类 !="疑似病例")
+weitanjian <- (df$疾病名称 == "未痰检") & (df$病例分类 !="疑似病例")
 #乙肝只能实验室和病原携带者
 yigan <- df$疾病名称== "乙肝" & !(df$病例分类 %in% c("实验室确诊病例","病原携带者"))
+#麻疹只能报疑似和实验室
+mazhen <- df$疾病名称== "麻    疹" &  df$病例分类 == "临床诊断病例"
+#除麻疹、未痰检和其它疾病的疑似病例
+yishi <- !(df$疾病名称 %in% c("未痰检","麻    疹","其它疾病:")) & (df$病例分类 =="疑似病例")
 
-diseasefilter <- shiyanshi | lingchuang | yishi | yigan
+diseasefilter <- shiyanshi | lingchuang | weitanjian | yigan | mazhen | yishi
 select(df,c(4,7,9,10,15,21,16,28)) %>% filter(diseasefilter)
 
 #病种与急慢性
@@ -167,7 +172,7 @@ df[addressfilter,c(4,7,9,10,14,15,19,21,28,30)]
 **备注检测**
 ```{r}
 #流行性感冒、其他感染性腹泻病病例中，如为实验室确诊病例，须在备注栏中填写具体的病原分型；输入性疟疾、登革热等疾病须注明输入地。卵型疟、三日疟报于疟疾“未分型”中，同时在备注栏中注明
-beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病") & (df$病例分类 =="实验室确诊病例") & nchar(df$备注) <2
+beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病","肝炎（未分型）") & (df$病例分类 =="实验室确诊病例") & nchar(df$备注) < 2
 beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & nchar(df$备注) <=2
 beizhufilter <- beizhufilter1 | beizhufilter2
 select(df,c(4,7,9,16,21,28,46)) %>% filter(beizhufilter)
@@ -179,5 +184,3 @@ select(df,c(4,7,9,16,21,28,46)) %>% filter(beizhufilter)
 phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 & !is.na(df$联系电话)
 select(df,c(4,7,9,11,28)) %>% filter(phonenumber)
 ```
-
-
