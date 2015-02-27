@@ -6,22 +6,21 @@ output:
   word_document: default
 ---
 
-2015年2月15日
+本代码的最新版本可在https://github.com/xiaofeijx/Rcode/blob/master/notifiblecheck.Rmd  
+获得  
+可能的bug:代码里的疾病名称与传染病报告卡的疾病名称格式不一致  
+除了检查本地报卡，还要检查按现住址报卡
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE,tidy=TRUE}
 library(dplyr)
 library(xtable)
+library(lubridate)
 ```
-
 
 ```{r echo=FALSE,tidy=TRUE}
 
-df <- read.csv("report.csv",header=T,stringsAsFactors=F,na.strings = ".")
-if (substr(df[1,19],nchar(df[1,19]),nchar(df[1,19])) ==":") #如果用EXCEl修改并保存，时间格式会变化
-{  
-  df <- read.csv("Report.csv",skip=2,header=T,stringsAsFactors=F,na.strings = ".")
-#head(df)
-#str(df)
+df <- read.csv("Report.csv",header=T,stringsAsFactors=F,na.strings = ".")
+
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format="%Y-%m-%d %H:%M:")
 df[,26] <- as.POSIXct(df[,26])
@@ -31,30 +30,27 @@ df[,34] <- as.POSIXct(df[,34],format="%Y-%m-%d %H:%M:")
 df[,35] <- as.POSIXct(df[,35],format="%Y-%m-%d %H:%M:")
 df[,37] <- as.POSIXct(df[,37],format="%Y-%m-%d %H:%M:")
 df[,38] <- as.POSIXct(df[,38],format="%Y-%m-%d %H:%M:")
-} else 
-  {
-    message("csv文件被修改保存过，可能不能运行!!!!")
-    df[,18] <- as.POSIXct(df[,18])
-    df[,26] <- as.POSIXct(df[,26])
-df[,19] <- as.POSIXct(df[,19],format="%Y/%m/%d %H:%M")
-df[,30] <- as.POSIXct(df[,30],format="%Y/%m/%d %H:%M")
-df[,33] <- as.POSIXct(df[,33],format="%Y/%m/%d %H:%M")
-df[,34] <- as.POSIXct(df[,34],format="%Y/%m/%d %H:%M")
-df[,35] <- as.POSIXct(df[,35],format="%Y/%m/%d %H:%M")
-df[,37] <- as.POSIXct(df[,37],format="%Y/%m/%d %H:%M")
-df[,38] <- as.POSIXct(df[,38],format="%Y/%m/%d %H:%M")
-  }
 
 
-#nchar(df[,9])
+#处理年龄，全部转为岁
 df$age <- ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="岁",
               as.numeric(substr(df[,9],1,nchar(df[,9])-1)),
               as.numeric(substr(df[,9],1,nchar(df[,9])-1))/12)
 df$报告单位 <- gsub(" ","",df$报告单位)
 
+df$现住详细地址 <- substr(df$现住详细地址,7,nchar(df$现住详细地址))
+totaldf <- df
+df <- df[df$审核状态 != "已删除卡",]
 ```
+```{r echo=FALSE,}
+#如果是星期天，则提示要查重
+if (wday(today())==1) message("今天要查重")
+```
+
+
 **报告病种统计**
 ```{r echo=FALSE,results='asis'}
+#统计导出的传报卡各疾病报告病例数
 df_df <- group_by(df,疾病名称)
 smdf <- summarise(df_df,count=n())
 arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html")
@@ -63,7 +59,8 @@ arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html"
 
 **少见病种显示**
 ```{r}
-commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻 疹")
+#显示不含在下列常见疾病列表的病种
+commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻    疹")
 rarefilter <- !(df$疾病名称 %in% commondisease)
 select(df,c(4,7,9,14,19,21,28,30)) %>% filter(rarefilter) 
 ```
@@ -71,80 +68,119 @@ select(df,c(4,7,9,14,19,21,28,30)) %>% filter(rarefilter)
 
 **甲类与甲类传染病报告时限检查>=2小时**
 ```{r}
-classone <- df[,21] %in% c("鼠 疫","霍 乱","传染性非典","脊 灰","肺炭疽")
-select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 2 & classone)
+#显示甲类与按甲类报告的疾病报告与诊断时间超过2小时
+classone <- totaldf[,21] %in% c("鼠  疫","霍 乱","传染性非典","脊    灰","肺炭疽")
+select(totaldf,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 2 & classone)
 
 ```
 
 
 **所有报告疾病报告时限检查>=24小时**
-```{r, echo=FALSE}
-df[difftime(df[,30],df[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
-select(df,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 2 & classone)
+```{r}
+#显示报告时间大于24小时的疾病
+totaldf[difftime(totaldf[,30],totaldf[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
+select(totaldf,c(4,7,9,14,19,21,28,30)) %>% filter(difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 2 & classone)
 ```
 
 
 **订正报告卡时限检查（含甲乙类）**
 ```{r}
-modifieddf <- df[!is.na(df[,37]),]
-mclassone <- modifieddf[,21] %in% c("鼠 疫","霍 乱","传染性非典","脊 灰","肺炭疽")
+#显示订正报告为甲类传染病，报告时间超过2小时
+modifieddf <- totaldf[!is.na(totaldf[,37]),]
+mclassone <- modifieddf[,21] %in% c("鼠 疫","霍 乱","传染性非典","脊    灰","肺炭疽")
 modifieddf[difftime(modifieddf[,38],modifieddf[,37],units="hours") >= 2 & mclassone, c(4,7,9,14,19,21,28)]
 
+#显示订正报告的传报卡，报告时间超过24小时
 modifieddf[difftime(modifieddf[,30],modifieddf[,19],units="days") >= 1, c(4,7,9,14,19,21,28)]
 ```
 
 
 **年龄与职业关系**
 ```{r}
-#14岁以下只能是:散居、幼托和学生
+#显示14岁以下，不是散居、幼托和学生
 agefilter1 <- !(df$职业 %in% c("散居儿童","幼托儿童","学生")) & df$age <14
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter1)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter1)
 ```
 
 
 ```{r}
-#是3岁以下是散居儿童
-agefilter2 <- (!(df$职业 %in% c("散居儿童")) & df$age<=3) | ((df$职业 %in% c("散居儿童")) & df$age>=5) 
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter2)
+#显示3岁以下不是散居和5岁以上为散居
+agefilter2 <- (!(df$职业 %in% c("散居儿童")) & df$age < 3) | ((df$职业 %in% c("散居儿童")) & df$age>=5) 
+select(df,c(4,7,9,15,21)) %>% filter(agefilter2)
 ```
 
 
 ```{r}
-#4岁到6岁为为幼托儿童
+#显示4岁到6岁不是幼托儿童，显示7岁以上为幼托儿童
 agefilter3 <- !(df$职业 %in% c("幼托儿童")) & (df$age>4 & df$age <=6) | ((df$职业 %in% c("幼托儿童")) & df$age>=7)
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter3)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter3)
 ```
 
 
 ```{r}
-#7-14岁为学生
+#显示7-14岁不是学生
 agefilter4 <- !(df$职业 %in% c("学生")) & (df$age>=7 & df $age <=14)
-select(df,c(4,7,9,15,19,21,28,30)) %>% filter(agefilter4)
+select(df,c(4,7,9,15,21)) %>% filter(agefilter4)
 ```
 
 
 **职业与单位**
 ```{r}
-occufilter <- (df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & (nchar(df$患者工作单位)<=2 | (df$患者工作单位=="不详") |(df$患者工作单位=="无"))
+#幼托儿童,学生,干部职员,工人,民工,教师,医务人员不填单位：
+occufilter <- (df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & (nchar(df$患者工作单位)<=2 | (df$患者工作单位=="不详") |(df$患者工作单位=="无") |(df$患者工作单位=="不清楚"))
 select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(occufilter)
+
+#填了单位，但职业不再上述列表里的
+occufilter2 <- !(df$职业 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员","离退人员")) & (nchar(df$患者工作单位) >=2 &  !(df$患者工作单位=="无"))
+select(df,c(4,7,9,10,15,21)) %>% filter(occufilter2)
 ```
 
 
 **病种与分类的关系**
 ```{r}
-yigan <- (df$疾病名称 == "乙肝") & !(df$病例分类 %in% c("实验室确诊病例","病原携带者"))
-afp <- (df$疾病名称 == "AFP") & (df$病例分类 !="临床诊断病例")
+#病种与诊断分类
+#只能实验室诊断
+shiyanshi <- ((df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","ＨＩＶ","涂（+）","仅培阳","脊    灰")) & !(df$病例分类 %in% c("实验室确诊病例")))
+#只能临床诊断
+lingchuang <- (df$疾病名称 %in% c("AFP","菌（-）","猩 红 热","流行性腮腺炎")) & (df$病例分类 !="临床诊断病例")
+#只能疑似病例
 weitanjian <- (df$疾病名称 == "未痰检") & (df$病例分类 !="疑似病例")
-tuyang <- (df$疾病名称 == "涂（+）") & (df$病例分类 !="实验室确诊病例")
-junying <- (df$疾病名称 == "菌（-）") & (df$病例分类 !="临床诊断病例")
-sexdisease <-  (df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病")) & (df$病例分类 !="实验室确诊病例")
-diseasefilter <- yigan | afp | weitanjian | tuyang | junying | sexdisease 
-select(df,c(4,7,9,10,15,19,21,28,30)) %>% filter(diseasefilter)
+#乙肝只能实验室和病原携带者
+yigan <- df$疾病名称== "乙肝" & !(df$病例分类 %in% c("实验室确诊病例","病原携带者"))
+#麻疹只能报疑似和实验室
+mazhen <- df$疾病名称== "麻    疹" &  df$病例分类 == "临床诊断病例"
+#除麻疹、未痰检和其它疾病的疑似病例
+yishi <- !(df$疾病名称 %in% c("未痰检","麻    疹","其它疾病:")) & (df$病例分类 =="疑似病例")
+
+diseasefilter <- shiyanshi | lingchuang | weitanjian | yigan | mazhen | yishi
+select(df,c(4,7,9,10,15,21,16,28)) %>% filter(diseasefilter)
+
+#病种与急慢性
+#下列三种疾病急慢性不能为未分类
+jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 =="未分类")
+select(df,c(4,7,9,10,17,19,21,28,30)) %>% filter(diseasefilter)
 ```
 
 **不详乡镇**
 ```{r}
+#显示地址中出现不详乡镇的报卡
 addressfilter <- grep("不详",df$现住详细地址)
 df[addressfilter,c(4,7,9,10,14,15,19,21,28,30)]
 
+```
+
+**备注检测**
+```{r}
+#流行性感冒、其他感染性腹泻病病例中，如为实验室确诊病例，须在备注栏中填写具体的病原分型；输入性疟疾、登革热等疾病须注明输入地。卵型疟、三日疟报于疟疾“未分型”中，同时在备注栏中注明
+beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病","肝炎（未分型）") & (df$病例分类 =="实验室确诊病例") & nchar(df$备注) < 2
+beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & nchar(df$备注) <=2
+beizhufilter <- beizhufilter1 | beizhufilter2
+select(df,c(4,7,9,16,21,28,46)) %>% filter(beizhufilter)
+```
+
+**电话号码检查**
+```{r}
+#对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
+phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 & !is.na(df$联系电话)
+select(df,c(4,7,9,11,28)) %>% filter(phonenumber)
 ```
