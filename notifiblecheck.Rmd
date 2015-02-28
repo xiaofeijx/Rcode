@@ -165,7 +165,7 @@ select(df,c(4,7,9,10,15,21)) %>% filter(occufilter3)
 ```
 **14岁以下填电话号码和家长姓名**
 ```{r}
-agephonefilter <- df$age <=14 & (((nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8) | is.na(df$联系电话)) | nchar(df$患儿家长姓名)<2 )
+agephonefilter <- df$age <=14 & (((nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8) | is.na(df$联系电话)) | nchar(df$患儿家长姓名)<2 | is.na(df$患儿家长姓名))
 select(df,c(4,5,11,15,21,28)) %>% filter(occufilter3)
 
 #填了家长姓名却大于14岁
@@ -211,8 +211,8 @@ df[addressfilter,c(4,7,9,10,14,15,19,21,28,30)]
 **备注检测**
 ```{r}
 #流行性感冒、其他感染性腹泻病、肝炎未分型，伤寒副伤寒、菌痢病例中，如为实验室确诊病例，须在备注栏中填写具体的病原分型；输入性疟疾、登革热等疾病须注明输入地。卵型疟、三日疟报于疟疾“未分型”中，同时在备注栏中注明
-beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒") & (df$病例分类 =="实验室确诊病例") & nchar(df$备注) < 2
-beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & nchar(df$备注) <=2
+beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒") & (df$病例分类 =="实验室确诊病例") & (nchar(df$备注) < 2 | is.na(df$备注))
+beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & (nchar(df$备注) <=2 | is.na(df$备注))
 beizhufilter <- beizhufilter1 | beizhufilter2
 select(df,c(4,7,9,16,21,28,46)) %>% filter(beizhufilter)
 ```
