@@ -25,11 +25,22 @@ df[duplicated(df),]
 #     A     4
 
 # Show unique repeat entries 
-unique(df[duplicated(df),])
+nn <- unique(df[duplicated(df),])
 # label value
 #     B     3
 #     A     4
+  
 
+nn$dup <- 1
+  
+total <- merge(df,nn,all.x=T)
+
+total[!is.na(total$dup),]
+
+library(dplyr)
+filter(total,dup == 1)
+  
+  
 # Original data with repeats removed. These do the same:
 unique(df)
 df[!duplicated(df),]
@@ -39,3 +50,12 @@ df[!duplicated(df),]
 #     C     6
 #     B     1
 #     A     2
+cname <- read.table("cname.txt",header =F,stringsAsFactors = F)
+  cnamelist <- strsplit(cname$V1,split="")
+  str(cname)
+  cnamedf <- as.data.frame(cnamelist)
+
+
+  
+  
+  
