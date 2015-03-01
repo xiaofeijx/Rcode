@@ -25,7 +25,7 @@ library(lubridate)
 
 ```{r echo=FALSE,tidy=TRUE}
 
-df <- read.csv("Report.csv",header=T,stringsAsFactors=F,na.strings = ".")
+df <- read.csv("Report.csv",header=T,stringsAsFactors=F,na.strings = c(".",""))
 dtformat <- guess_formats(df[1,19],"Ymd HM")
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format=dtformat)
@@ -169,7 +169,7 @@ agephonefilter <- df$age <=14 & (((nchar(df$联系电话)!= 11 & nchar(df$联系
 select(df,c(4,5,11,15,21,28)) %>% filter(occufilter3)
 
 #填了家长姓名却大于14岁
-parentfilter <- df$age >14 & nchar(df$患儿家长姓名)>= 2
+parentfilter <- df$age >14 & (nchar(df$患儿家长姓名)>= 2 & !is.na(df$患儿家长姓名))
 select(df,c(4,5,48,11,15,21,28)) %>% filter(parentfilter)
 ```
 
