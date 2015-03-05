@@ -197,7 +197,7 @@ select(df,c(4,7,9,10,15,21,16,28)) %>% filter(diseasefilter)
 #病种与急慢性
 #下列三种疾病急慢性不能为未分类
 jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 =="未分类")
-select(df,c(4,7,9,10,17,19,21,28,30)) %>% filter(diseasefilter)
+select(df,c(4,7,9,10,17,19,21,28,30)) %>% filter(jimanfilter)
 ```
 
 **不详乡镇**
@@ -220,9 +220,11 @@ select(df,c(4,7,9,16,21,28,46)) %>% filter(beizhufilter)
 **电话号码检查**
 ```{r}
 #只检查不是性病、其它感染性腹泻的报卡
-phonefilter <- df$疾病名称 %in% c("淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","尖锐湿疣","生殖器疱疹","生殖道沙眼衣原体感染","其它疾病:","其它感染性腹泻病")
+phonefilter <- df$疾病名称 %in% c("淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","隐性梅毒","尖锐湿疣","生殖器疱疹","生殖道沙眼衣原体感染","其它疾病:","其它感染性腹泻病")
 df <- df[!phonefilter,]
 #对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
 phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 & !is.na(df$联系电话)
 select(df,c(4,7,9,11,28)) %>% filter(phonenumber)
 ```
+
+
