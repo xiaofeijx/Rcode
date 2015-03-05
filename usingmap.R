@@ -57,6 +57,9 @@ Zhejiang.map + geom_text(aes(x = V1,y = V2,label = Names,size = 10,colour = "whi
 
 
 #用中国CDC给的地图
+library(rgeos)
+library(rgdal)
+library(ggplot2)
 shape.dir = "F:/shp/shp"
 china.shp= readOGR(shape.dir, layer = "quxian Polygon",stringsAsFactors=F)
 str(china.shp, max.level=2)
@@ -67,9 +70,14 @@ jxindex <- which(china.shp$CNTY_CODE %in% c(330402,330411,330421,330424,330481,3
 # Zhejiang.shp$NL_NAME_2
 # Zhejiang.shp$VARNAME_2
 jiaxing.shp = china.shp[jxindex,]
-#plot(jiaxing.shp)
+newprj <-  CRS("+proj=longlat +ellps=WGS84")
+jiaxing.shp <- spTransform(jiaxing.shp,newprj)
+#proj4string(jiaxing.shp) <- CRS("+proj=longlat +ellps=WGS84")
+
+plot(jiaxing.shp,axes=T)
 names(jiaxing.shp)
 head(jiaxing.shp@data)
+class(jiaxing.shp)
 jiaxing.shp@data$NAME[jiaxing.shp$PYNAME == "Jiashan Xian"] <- "嘉善县" 
 jiaxing.shp@data$NAME[jiaxing.shp$PYNAME == "Haiyan Xian"] <- "海盐县" 
 jiaxing.shp@data$NAME[jiaxing.shp$PYNAME == "Tongxiang Shi"] <- "桐乡市" 
@@ -86,8 +94,8 @@ names(jiaxing.df)
 mydat=data.frame(id=unique(sort(jiaxing.df$id)))
 mydat$rand=runif(length(mydat$id))
 
-jiaxing.map = ggplot(mydat) +
-  geom_map(aes(map_id = id, fill = rand), color = "white", map =jiaxing.df) +
+jiaxing.map <- ggplot() +
+  geom_map(aes(map_id = id, fill = rand), color = "white", map =jiaxing.df,data=mydat) +
   scale_fill_gradient(high = "darkgreen",low = "lightgreen") +
   expand_limits(jiaxing.df) + coord_map() 
 #添加地名
@@ -96,3 +104,17 @@ tmp = as.data.frame(tmp)
 tmp$Names=jiaxing.shp$NAME
 #tmp$Names = gsub('市','',Zhejiang.shp$NL_NAME_2)
 jiaxing.map + geom_text(aes(x = V1,y = V2,label = Names,size = 10,colour = "white",fontface=3),data = tmp)
+
+
+#叠加
+
+library(ggmap)
+cjiaxingmap10 <- get_map(location = c(lon = 120.7585, lat = 30.75392),
+                         scale=2,zoom=10)
+save(cjiaxingmap10,file="jiaxingmap.RData")
+load("jiaxingmap.RData")
+str(cjiaxingmap10)
+head(jiaxing.df)
+ggmap(cjiaxingmap10)+
+  geom_path(aes(x=x,y=y,group=group),data=jiaxing.df,colour="black")
+
