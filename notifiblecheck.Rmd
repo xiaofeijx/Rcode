@@ -41,7 +41,11 @@ df[,38] <- as.POSIXct(df[,38],format=dtformat)
 #处理年龄，全部转为岁
 df$age <- ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="岁",
               as.numeric(substr(df[,9],1,nchar(df[,9])-1)),
-              as.numeric(substr(df[,9],1,nchar(df[,9])-1))/12)
+              (ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="月",
+                       as.numeric(substr(df[,9],1,nchar(df[,9])-1))/12,
+                      as.numeric(substr(df[,9],1,nchar(df[,9])-1))/365)))
+head(df$age)
+
 df$报告单位 <- gsub(" ","",df$报告单位)
 
 df$现住详细地址 <- substr(df$现住详细地址,7,nchar(df$现住详细地址))
@@ -227,4 +231,6 @@ phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 & !is.na
 select(df,c(4,7,9,11,28)) %>% filter(phonenumber)
 ```
 
-
+修订内容：
+2015年3月19日
+1、增加了对年龄为天的处置，为天数除以365
