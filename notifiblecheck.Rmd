@@ -19,7 +19,7 @@ library(knitr)
 library(dplyr)
 library(xtable)
 library(lubridate)
-
+library(stringr)
 opts_chunk$set(echo=FALSE)
 ```
 
@@ -31,7 +31,7 @@ df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format=dtformat)
 df[,26] <- as.POSIXct(df[,26])
 df[,30] <- as.POSIXct(df[,30],format=dtformat)
-df$reporttime <- strftime(df$报告卡录入时间,format="%m-%d %H:%M")
+df$报卡录入时间 <- strftime(df$报告卡录入时间,format="%m-%d %H:%M")
 df[,33] <- as.POSIXct(df[,33],format=dtformat)
 df[,34] <- as.POSIXct(df[,34],format=dtformat)
 df[,35] <- as.POSIXct(df[,35],format=dtformat)
@@ -48,6 +48,7 @@ df$age <- ifelse(substr(df[,9],nchar(df[,9]),nchar(df[,9]))=="岁",
 #head(df$age)
 
 df$报告单位 <- gsub(" ","",df$报告单位)
+df$报告单位 <- str_sub(df$报告单位,start=-12)
 
 df$现住详细地址 <- substr(df$现住详细地址,7,nchar(df$现住详细地址))
 
@@ -57,12 +58,17 @@ df$area <- substr(df$卡片编号,1,6)
 #levels=c("330402","330411","330421","330424","330481","330482","330483"),labels=c("南湖区","秀洲区","嘉善县","海盐县","海宁市","平湖市","桐乡市")
 df$area <- factor(df$area)
 
+#剔除其它疾病和其它两种诊断
+df <- df[substr(df$疾病名称,1,4) != "其它疾病" & substr(df$疾病名称,1,3) != "其它:",]
+
+
 #对所有报卡进行报卡及时性核查
-totaldf <- df[ substr(df$疾病名称,1,2) != "其它",-27]
-showcol_1 <- grep("患者姓名|性别|年龄|疾病名称|报告单位|reporttime",names(totaldf))
+totaldf <- df[,-27]
+showcol_1 <- grep("患者姓名|性别|年龄|疾病名称|报告单位|报卡录入时间",names(totaldf))
+
 #对非删除卡和非其它疾病的卡片进行其它逻辑检查
-df <- df[df$审核状态 != "已删除卡" & substr(df$疾病名称,1,2) != "其它",-27]
-showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|报告单位|reporttime",names(df))
+df <- df[df$审核状态 != "已删除卡" ,-27]
+showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|报告单位|报卡录入时间",names(df))
 
 ```
 
@@ -363,6 +369,7 @@ select(df,showcol_2) %>% filter(jimanfilter)
 2015年3月20日  
 1、进一步修订要显示的内容  
 2、修订了订正卡的报告时间计算错误
+3、使用了stringr包，请安装
 
 
 2015年3月19日  
