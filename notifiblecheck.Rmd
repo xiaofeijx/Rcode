@@ -2,6 +2,7 @@
 title: "abc"
 output:
   html_document:
+    number_sections: yes
     theme: readable
   word_document: default
 ---
