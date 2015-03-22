@@ -31,6 +31,7 @@ df <- read.csv("Report.csv",header=T,stringsAsFactors=F,na.strings = c(".",""))
 dtformat <- guess_formats(df[1,19],"Ymd HM")
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format=dtformat)
+df[,23] <- as.POSIXct(df[,23],format=dtformat)
 df[,26] <- as.POSIXct(df[,26])
 df[,30] <- as.POSIXct(df[,30],format=dtformat)
 df$报卡录入时间 <- strftime(df$报告卡录入时间,format="%m-%d %H:%M")
@@ -398,4 +399,4 @@ select(df,showcol_2) %>% filter(jimanfilter)
 
 
 改进计划：  
-1、进一步改进订正卡片报告时间的计算逻辑
+1、修订显示内容
