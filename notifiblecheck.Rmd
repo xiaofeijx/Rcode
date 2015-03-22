@@ -106,30 +106,43 @@ select(df,showcol_2) %>% filter(rarefilter)
 ```{r}
 #显示甲类与按甲类报告的疾病报告与诊断时间超过2小时
 classone <- totaldf$疾病名称 %in% c("鼠  疫","霍 乱","传染性非典","脊    灰","肺炭疽")
-select(totaldf,showcol_1) %>% filter(difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 2 & classone)
+#诊断时间与录入时间
+timefilter1 <- difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 2
+#订正前诊断时间与录入时间
+timefilter2 <- difftime(totaldf$报告卡录入时间,totaldf$订正前诊断时间,units="hours") >= 2
+#诊断时间与订正报告时间
+timefilter3 <- difftime(totaldf$订正报告时间,totaldf$诊断时间,units="hours") >= 2
+
+
+#无订正前诊断时间的报告卡
+modifyfilter <- is.na(totaldf$订正前诊断时间)
+unmodified <-  totaldf[modifyfilter,]
+select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter] & classone[modifyfilter])
+
+#有订正前诊断时间的报告卡
+modified <-  totaldf[!modifyfilter,]
+select(modified,showcol_1) %>% filter((timefilter2[!modifyfilter ] | timefilter3[!modifyfilter]) & classone[!modifyfilter])
 
 ```
 
 
 **所有报告疾病报告时限检查>=24小时**
 ```{r}
-#显示报告时间大于24小时的疾病
-totaldf[difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="days") >= 1, showcol_1]
-```
+#诊断时间与录入时间
+timefilter1 <- difftime(totaldf$报告卡录入时间,totaldf$诊断时间,units="hours") >= 24
+#订正前诊断时间与录入时间
+timefilter2 <- difftime(totaldf$报告卡录入时间,totaldf$订正前诊断时间,units="hours") >= 24
+#诊断时间与订正报告时间
+timefilter3 <- difftime(totaldf$订正报告时间,totaldf$诊断时间,units="hours") >= 24
 
+#无订正前诊断时间的报告卡
+modifyfilter <- is.na(totaldf$订正前诊断时间)
+unmodified <-  totaldf[modifyfilter,]
+select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter])
 
-**订正报告卡时限检查（甲类）**
-```{r}
-#显示订正报告为甲类传染病，报告时间超过2小时
-modifieddf <- totaldf[!is.na(totaldf$订正报告时间),]
-mclassone <- modifieddf$疾病名称 %in% c("鼠 疫","霍 乱","传染性非典","脊    灰","肺炭疽")
-modifieddf[difftime(modifieddf$订正报告时间,modifieddf$诊断时间,units="hours") >= 2 & mclassone, showcol_1]
-
-```
-**订正报告卡时限检查（乙丙类）**
-```{r}
-#显示订正报告的传报卡，报告时间超过24小时
-modifieddf[difftime(modifieddf$订正报告时间,modifieddf$诊断时间,units="days") >= 1, showcol_1]
+#有订正前诊断时间的报告卡
+modified <-  totaldf[!modifyfilter ,]
+select(modified,showcol_1) %>% filter(timefilter2[!modifyfilter ] | timefilter3[!modifyfilter])
 ```
 
 
