@@ -233,7 +233,7 @@ select(df,showcol_2) %>% filter(occufilter)
 
 **填了单位，但职业为保育员及保姆,农民,离退人员,家务及待业的**
 ```{r}
-occufilter2 <- (df$职业 %in% c("保育员及保姆","农民","离退人员","家务及待业")) & (!is.na(df$患者工作单位) & df$患者工作单位!="无")
+occufilter2 <- (df$职业 %in% c("保育员及保姆","农民","散居儿童","家务及待业")) & (!is.na(df$患者工作单位) & df$患者工作单位!="无")
 select(df,showcol_2) %>% filter(occufilter2)
 ```
 **罕见职业，牧民和鱼船名**
