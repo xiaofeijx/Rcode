@@ -16,7 +16,7 @@ output:
 ---
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE,tidy=TRUE}
-options(width=170)
+options(width=170,digits=3)
 library(knitr)
 library(dplyr)
 library(xtable)
@@ -169,7 +169,7 @@ showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡
 wshdf <- df[df$审核状态 == "未审核卡",]
 mutate(wshdf,time=difftime(now(),wshdf$报告卡录入时间,units="hours")) %>%
   group_by(area) %>%
-  summarise(最长未审核时间=first(time))
+  summarise(未审卡数=n(),最长未审核时间=first(time))
 rm(wshdf)
 ```
 
@@ -410,6 +410,9 @@ select(df,showcol_2) %>% filter(jimanfilter)
 
 
 **修订内容**  
+2015年3月27日  
+1、增加了未审核卡片数量的计算  
+
 2015年3月25日  
 1、修订显示内容  
 
