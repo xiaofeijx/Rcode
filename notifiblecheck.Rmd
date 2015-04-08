@@ -293,7 +293,7 @@ df[addressfilter,showcol_2]
 beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒") & (df$病例分类 =="实验室确诊病例") & (nchar(df$备注) < 2 | is.na(df$备注))
 beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & (nchar(df$备注) <=2 | is.na(df$备注))
 beizhufilter <- beizhufilter1 | beizhufilter2
-showcol_2 <- grep("患者姓名|性别|年龄|^报告单位$|报卡录入时间|备注",names(df))
+showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间|备注",names(df))
 select(df,showcol_2) %>% filter(beizhufilter)
 ```
 
@@ -305,7 +305,7 @@ df <- df[!phonefilter,]
 #对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
 
 phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 | is.na(df$联系电话)
-showcol_2 <- grep("患者姓名|性别|年龄|^报告单位$|报卡录入时间|联系电话",names(df))
+showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间|联系电话",names(df))
 select(df,showcol_2) %>% filter(phonenumber)
 ```
 
