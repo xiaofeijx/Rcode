@@ -303,7 +303,11 @@ select(df,showcol_2) %>% filter(beizhufilter)
 phonefilter <- df$疾病名称 %in% c("淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","隐性梅毒","尖锐湿疣","生殖器疱疹","生殖道沙眼衣原体感染","其它疾病:","其它感染性腹泻病")
 df <- df[!phonefilter,]
 #对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
+<<<<<<< HEAD
 phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 |is.na(df$联系电话)
+=======
+phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 | is.na(df$联系电话)
+>>>>>>> 318f8b464c02d2bb1828037658390dea25cced84
 showcol_2 <- grep("患者姓名|性别|年龄|^报告单位$|报卡录入时间|联系电话",names(df))
 select(df,showcol_2) %>% filter(phonenumber)
 ```
