@@ -127,7 +127,7 @@ select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter] & classone[mod
 
 #操作对象：有订正前诊断时间的报告卡
 modified <-  df[!modifyfilter,]
-showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
+showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
 select(modified,showcol_1) %>% filter((timefilter2[!modifyfilter ] | timefilter3[!modifyfilter]) & classone[!modifyfilter])
 
 ```
@@ -150,7 +150,7 @@ select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter])
 
 #有订正前诊断时间的报告卡
 modified <-  df[!modifyfilter ,]
-showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
+showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
 select(modified,showcol_1) %>% filter(timefilter2[!modifyfilter ] | timefilter3[!modifyfilter])
 ```
 
@@ -303,7 +303,7 @@ select(df,showcol_2) %>% filter(beizhufilter)
 phonefilter <- df$疾病名称 %in% c("淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","隐性梅毒","尖锐湿疣","生殖器疱疹","生殖道沙眼衣原体感染","其它疾病:","其它感染性腹泻病")
 df <- df[!phonefilter,]
 #对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
-phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 & !is.na(df$联系电话)
+phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 |is.na(df$联系电话)
 showcol_2 <- grep("患者姓名|性别|年龄|^报告单位$|报卡录入时间|联系电话",names(df))
 select(df,showcol_2) %>% filter(phonenumber)
 ```
@@ -410,6 +410,10 @@ select(df,showcol_2) %>% filter(jimanfilter)
 
 
 **修订内容**  
+2015年4月8日  
+1、电话号码不填的的显示  
+2、订正卡片报卡时间检测里增加显示订正前诊断  
+
 2015年3月27日  
 1、增加了未审核卡片数量的计算  
 
