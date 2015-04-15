@@ -247,13 +247,14 @@ select(df,showcol_2) %>% filter(agefilter4)
 ----
 
 **年龄与病种的关系**  
-根据2014年的报卡，大致关系如下：新生儿破伤风小于28天，胎传梅毒小于5岁，手足口病小于30岁，AFP小于15岁，其它梅毒、艾滋病、丙肝、肺结核、肝炎大于15岁。  
+根据2014年的报卡，大致关系如下：新生儿破伤风小于28天，胎传梅毒小于5岁，手足口病小于30岁，AFP和猩红热小于15岁，其它梅毒、艾滋病、丙肝、肺结核、肝炎大于15岁。  
 ```{r}
 poshangfeng <- df$疾病名称 =="新生儿破伤风" & df$age >28/365
 tcmeidu <-  df$疾病名称 =="胎传梅毒" & df$age >5
 szkb <-  df$疾病名称 =="手足口病" & df$age >30
+xhr <-  df$疾病名称 %in% c("猩 红 热","AFP") & df$age >15
 otherfilter <- df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","ＨＩＶ","III期梅毒","隐性梅毒","艾滋病","涂（+）","菌（-）","乙肝","甲肝","戊肝","丙肝","肝炎（未分型）") & df$age <15
-select(df,showcol_2) %>% filter(poshangfeng|tcmeidu|szkb|otherfilter)
+select(df,showcol_2) %>% filter(poshangfeng|tcmeidu|szkb|otherfilter|xhr)
 ```
 
 
