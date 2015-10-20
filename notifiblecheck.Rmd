@@ -16,12 +16,12 @@ output:
 ---
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE,tidy=TRUE}
-options(width=170,digits=3)
+options(width=170,digits=3,scipen=11)
 library(knitr)
 library(dplyr)
 library(xtable)
 library(lubridate)
-#library(stringr)
+library(stringr)
 opts_chunk$set(echo=FALSE)
 ```
 
@@ -337,7 +337,11 @@ phonefilter <- df$疾病名称 %in% c("淋    病","Ⅰ期梅毒","Ⅱ期梅毒"
 df <- df[!phonefilter,]
 #对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
 
-phonenumber <- nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8 | is.na(df$联系电话)
+#手机号码：1开头11位,固定电话8位、0573-88888888和057388888888模式
+cellphone <- str_detect(df$联系电话,"1[0-9]{10}")
+phone <- str_detect(df$联系电话,"^[0-9]{8}$|^0[0-9]{3}-[0-9]{8}$|^0[0-9]{11}")
+
+phonenumber <- !(cellphone | phone) | is.na(df$联系电话)
 showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间|联系电话",names(df))
 select(df,showcol_2) %>% filter(phonenumber)
 ```
@@ -444,6 +448,9 @@ select(df,showcol_2) %>% filter(jimanfilter)
 
 
 **修订内容**  
+2015年10月20日  
+1、细化手机号码、固定号码的检测
+
 2015年4月15日  
 1、幼托儿童单位不得出现小学，教师不得出现公司。2、增加年龄与疾病的关系。  
 
@@ -473,6 +480,3 @@ select(df,showcol_2) %>% filter(jimanfilter)
 2015年3月19日  
 1、增加了对年龄为天的处置，为天数除以365。2、隐藏代码，改进视觉效果。3、统一了显示的内容。4、现住址为本地的报卡检测
 
-
-改进计划：  
-1、修订显示内容
