@@ -84,9 +84,13 @@ if (wday(today())==1) message("今天要查重")
 #统计导出的传报卡各疾病报告病例数
 #按地区统计
 luru <- range(df$报告卡录入时间)
-dingzheng <- range(df$订正报告时间,na.rm=TRUE)
+dingzheng <- NA
+if (any(!is.na(df$订正报告时间))) {
+ dingzheng <- range(df$订正报告时间,na.rm=TRUE) 
+}
+
 ```
-本次检测的报卡时间范围为`r max(luru[1],dingzheng[1])`至`r luru[2]`
+本次检测的报卡时间范围为`r min(luru[1],dingzheng[1],na.rm=T)`至`r luru[2]`
 
 
 **统计导出的传报卡各疾病报告病例数(非删除卡)**
