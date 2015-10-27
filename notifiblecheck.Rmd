@@ -11,7 +11,7 @@ output:
 另外：本地报告的文件请保存为Report.csv  
 外地报至本地卡片请保存为Reprot2.csv,如果不存在本地报卡Report2.csv文件,则默认读取Report.csv   
 
-需要knitr,dplyr,xtable,lubridate,stringr等几个包,需要提前安装
+需要knitr,dplyr,xtable,lubridate,stringr,stringi等几个包,需要提前安装
 
 ---
 
