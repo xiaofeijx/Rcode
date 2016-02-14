@@ -178,6 +178,190 @@ library(dplyr)
 
 library(readr)
 
-b <- read_csv("C:/Users/Administrator/Documents/sw/zl330400.csv")
-b
+b <- read_csv("C:/Users/Administrator/Documents/sw/zl3304008.csv")
+b[1,]
+dim(b)
 names(b)
+
+################糖尿病
+#糖尿病中死亡日期空与2014-2015死亡库核对
+library(dplyr)
+sw0 <- read.csv("C:/Users/Administrator/Documents/sw/sw330400.csv")
+#tnb <- read.csv("C:/Users/Administrator/Documents/sw/tnb330400.csv")
+head(tnb)
+tail(tnb)
+tnb <- read.csv("C:/Users/Administrator/Documents/sw/tnb330400.csv",
+                na.strings = "",
+                stringsAsFactors = FALSE)
+
+
+sw <- tbl_df(sw0)
+tnb <- tbl_df(tnb)
+
+
+tnb <- tnb[tnb$报告卡状态 %in% c("可用卡","失访卡","死卡","死亡卡" ) & tnb$死亡日期 == "",]
+
+tnb <- tnb[!(tnb$身份证号码 == "'"),]
+
+sw <- sw[!(sw$证件号码 == "'") & (sw$报告卡状态 == "可用卡"),]
+
+tnb2 <-inner_join(tnb,sw,by=c("身份证号码"="证件号码"))
+
+tnbswk330402 <- tnb2[tnb2$户口地址区县=="33040200  南湖区",]
+write.csv(tnbswk330402,"c:/tnbswk330402.csv")
+
+tnbswk330421 <- tnb2[tnb2$户口地址区县=="33042100  嘉善县",]
+write.csv(tnbswk330421,"c:/tnbswk330421.csv")
+
+tnbswk330482 <- tnb2[tnb2$户口地址区县=="33048200  平湖市",]
+write.csv(tnbswk330482,"c:/tnbswk330482.csv")
+
+tnbswk330424 <- tnb2[tnb2$户口地址区县=="33042400  海盐县",]
+write.csv(tnbswk330424,"c:/tnbswk330424.csv")
+
+tnbswk330481 <- tnb2[tnb2$户口地址区县=="33048100  海宁市",]
+write.csv(tnbswk330481,"c:/tnbswk330481.csv")
+
+tnbswk330411 <- tnb2[tnb2$户口地址区县=="33041100  秀洲区",]
+write.csv(tnbswk330411,"c:/tnbswk330411.csv")
+
+tnbswk330483 <- tnb2[tnb2$户口地址区县=="33048300  桐乡市",]
+write.csv(tnbswk330483,"c:/tnbswk330483.csv")
+
+###################
+#日期错误，年龄小于20，糖尿病类型等于2型和妊娠糖尿病
+names(tnb)
+#"出生日期"  "诊断日期""报卡日期""死亡日期" ,"初访时间" "最后随访时间"
+
+write.csv(tnb[1:10,],"c:/nn.csv")
+tnb$出生日期 <- as.Date(as.character(tnb$出生日期))
+tnb$死亡日期 <- as.Date(as.character(tnb$死亡日期))
+tnb$诊断日期 <- as.Date(as.character(tnb$诊断日期))
+tnb$报卡日期 <- as.Date(as.character(tnb$报卡日期))
+tnb$初访时间 <- as.Date(as.character(tnb$初访时间))
+tnb$最后随访时间 <- as.Date(as.character(tnb$最后随访时间))
+
+
+tnb <- tnb[tnb$报告卡状态 %in% c("可用卡","失访卡","死卡","死亡卡" ),]
+
+#出生日期小于所有日期
+luoji1 <- (tnb$出生日期> tnb$死亡日期) | (tnb$出生日期> tnb$诊断日期) | (tnb$出生日期> tnb$报卡日期) | (tnb$出生日期> tnb$初访时间) | (tnb$出生日期> tnb$最后随访时间)
+
+#诊断日期大于死亡日期
+luoji2 <- (tnb$诊断日期 > tnb$死亡日期)
+luoji2[is.na(luoji2)] <- FALSE
+
+
+#诊断日期大于初访或随访日期、报告日期
+luoji3 <- (tnb$诊断日期> tnb$初访时间)
+luoji3[is.na(luoji3)] <- FALSE
+
+luoji4 <- (tnb$诊断日期> tnb$最后随访时间)
+luoji4[is.na(luoji4)] <- FALSE
+
+luoji5 <- (tnb$诊断日期> tnb$报卡日期)
+luoji5[is.na(luoji5)] <- FALSE
+
+#最后随访时间大于死亡日期
+luoji6 <- (tnb$最后随访时间 > tnb$死亡日期)
+luoji6[is.na(luoji6)] <- FALSE
+
+luojilast <- luoji2 | luoji3 | luoji4 | luoji5 | luoji6
+sum(luojilast)
+
+write.csv(tnb[luojilast,],"c:/tnb日期逻辑错误.csv")
+############
+
+write.csv(tnb[luoji2,],"c:/tnb诊断日期大于死亡日期.csv")
+
+tnb$age <- floor((tnb$诊断日期 - tnb$出生日期)/365.25)
+tnb$age[1:10]
+
+luoji7 <- tnb$age <20  & (tnb$糖尿病类型 =="II型糖尿病")
+luoji8 <- tnb$age <15  & (tnb$糖尿病类型 =="妊娠糖尿病")
+write.csv(tnb[luoji7,],"c:/tnb年龄与糖尿病类型核查.csv")
+write.csv(tnb[tnb$age <0,],"c:/tnb年龄为负值.csv")
+write.csv(tnb[luoji8,],"c:/tnb妊娠糖尿病.csv")
+
+write.csv(tnb[luoji7 | luoji8,],"c:/tnb年龄问题.csv")
+
+
+##############心脑历史库与2014-2015死亡库比对
+sw0 <- read.csv("C:/Users/Administrator/Documents/sw/sw330400.csv",stringsAsFactors = F)
+xn <-  read.csv("C:/Users/Administrator/Documents/sw/xnxg330400.csv",stringsAsFactors = F)
+library(dplyr)
+sw <- tbl_df(sw0)
+xn <- tbl_df(xn)
+names(xn)
+sw <- sw[!(sw$证件号码 == "'") & (sw$报告卡状态 == "可用卡"),]
+xn1 <- xn[xn$卡状态 %in% c("可用卡","失访卡","死卡","死亡卡" ) & xn$死亡日期 == "" & xn$身份证号 !="'",]
+
+xnswk <-inner_join(xn1,sw,by=c("身份证号"="证件号码"))
+xnswk$常住户口地址区县[1:50]
+
+write.csv(xnswk,"c:/xnswk330400.csv")
+
+xnswk330402 <- xnswk[xnswk$常住户口地址区县=="33040200  南湖区",]
+write.csv(xnswk330402,"c:/xnswk330402.csv")
+
+xnswk330421 <- xnswk[xnswk$常住户口地址区县=="33042100  嘉善县",]
+write.csv(xnswk330421,"c:/xnswk330421.csv")
+
+xnswk330482 <- xnswk[xnswk$常住户口地址区县=="33048200  平湖市",]
+write.csv(xnswk330482,"c:/xnswk330482.csv")
+
+xnswk330424 <- xnswk[xnswk$常住户口地址区县=="33042400  海盐县",]
+write.csv(xnswk330424,"c:/xnswk330424.csv")
+
+
+####
+xnswk330481 <- xnswk[xnswk$常住户口地址区县=="33048100  海宁市",]
+write.csv(xnswk330481,"c:/xnswk330481.csv")
+
+xnswk330411 <- xnswk[xnswk$常住户口地址区县=="33041100  秀洲区",]
+write.csv(xnswk330411,"c:/xnswk330411.csv")
+
+xnswk330483 <- xnswk[xnswk$常住户口地址区县=="33048300  桐乡市",]
+write.csv(xnswk330483,"c:/xnswk330483.csv")
+
+##############心脑逻辑校验
+#年龄小于15岁，写到一个文件中
+xn2 <- xn[xn$卡状态 %in% c("可用卡","失访卡","死卡","死亡卡" ),]
+names(xn2)
+xn2$发病日期[1:10]
+
+xn2$发病日期 <- as.Date(xn2$发病日期)
+xn2$出生日期 <- as.Date(xn2$出生日期)
+
+xn2$死亡日期 <- as.Date(xn2$死亡日期)
+xn2$age <- floor((xn2$发病日期 - xn2$出生日期)/365.25)
+xnage <- xn2[xn2$age <20,]
+write.csv(xnage,"c:/xnage20.csv")
+
+#发病日期大于死亡日期
+luoji <- xn2$发病日期 > xn2$死亡日期
+luoji[is.na(luoji)] <- FALSE
+
+xn2fabingsiwang <- xn2[luoji,]
+write.csv(xn2fabingsiwang,"c:/xn2发病大于死亡330400.csv")
+
+xn2fabingsiwang330402 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33040200  南湖区",]
+write.csv(xn2fabingsiwang330402,"c:/xn2发病大于死亡330402.csv")
+
+xn2fabingsiwang330421 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33042100  嘉善县",]
+write.csv(xn2fabingsiwang330421,"c:/xn2发病大于死亡330421.csv")
+
+xn2fabingsiwang330482 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33048200  平湖市",]
+write.csv(xn2fabingsiwang330482,"c:/xn2发病大于死亡330482.csv")
+
+xn2fabingsiwang330424 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33042400  海盐县",]
+write.csv(xn2fabingsiwang330424,"c:/xn2发病大于死亡330424.csv")
+
+xn2fabingsiwang330481 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33048100  海宁市",]
+write.csv(xn2fabingsiwang330481,"c:/xn2发病大于死亡330481.csv")
+
+xn2fabingsiwang330411 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33041100  秀洲区",]
+write.csv(xn2fabingsiwang330411,"c:/xn2发病大于死亡330411.csv")
+
+xn2fabingsiwang330483 <- xn2fabingsiwang[xn2fabingsiwang$常住户口地址区县=="33048300  桐乡市",]
+write.csv(xn2fabingsiwang330483,"c:/xn2发病大于死亡330483.csv")
