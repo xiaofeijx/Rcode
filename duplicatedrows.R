@@ -11,7 +11,8 @@
 #5、df_name_** 表示先查姓名和疾病大类，在相同的情况下，分别查电话dh，现住址xzz和证件号码zj
 #6、df_zj查找身份证和疾病大类相同的卡片
 #7、df_dh查找电话和疾病大类相同的卡片
-#8、这个程序在疾病大类比对的时候有问题，但还不知道哪里出了问题。
+#8、查出的卡片只是疑似重卡，需要人工进一步核实。
+#9、欢迎反馈：QQ7880774
 
 
 
@@ -65,6 +66,7 @@ namedf <- ddply(namedf,.(name),finddu,col=12)
 #在疾病大类相同的情况下，查身份证号码是否相同
 namedf_zj <- namedf[namedf$有效证件号 != "",]
 namedf_zj <- ddply(namedf_zj,.(name),finddu,col=3)
+namedf_zj <- ddply(namedf_zj,.(name),finddu,col=12)
 write.csv(namedf_zj,"df_name_zj.csv")
 
 #在疾病大类相同的情况下，查电话号码是否相同
@@ -72,12 +74,14 @@ namedf_dh <- namedf[namedf$联系电话 != "",]
 #去掉前面已经查出来的卡片
 namedf_dh <- namedf[!(namedf$卡片ID %in% namedf_zj$卡片ID),] 
 namedf_dh <- ddply(namedf_dh,.(name),finddu,col=5)
+namedf_dh <- ddply(namedf_dh,.(name),finddu,col=12)
 write.csv(namedf_dh,"df_name_dh.csv")
 
 #在疾病大类相同的情况下，查现住址编码是否相同
 #去掉前面已经查出来的卡片
 namedf_xzz <- namedf[!(namedf$卡片ID %in% namedf_zj$卡片ID) & !(namedf$卡片ID %in% namedf_dh$卡片ID),] 
 namedf_xzz <- ddply(namedf_xzz,.(name),finddu,col=6)
+namedf_xzz <- ddply(namedf_xzz,.(name),finddu,col=12)
 write.csv(namedf_xzz,"df_name_xzz.csv")
 
 #身份证号查重
