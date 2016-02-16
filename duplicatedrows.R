@@ -14,6 +14,7 @@
 #7、df_dh查找电话和疾病大类相同的卡片
 #8、查出的卡片只是疑似重卡，需要人工进一步核实。
 #9、欢迎反馈：QQ7880774
+#代码更新地址：https://github.com/xiaofeijx/Rcode/blob/master/duplicatedrows.R
 #2016.2.16
 
 
