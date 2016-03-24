@@ -117,8 +117,9 @@ arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html"
 commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻    疹")
 rarefilter <- !(df2$疾病名称 %in% commondisease)
 showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间",names(df2))
-select(df2,showcol_2) %>% filter(rarefilter) 
-rm(df2)
+z <- dplyr::select(df2,showcol_2)
+dplyr::filter(z,rarefilter) 
+#rm(df2)
 ```
 
 
@@ -278,10 +279,16 @@ select(df,showcol_2) %>% filter(occufilter)
 
 **幼托儿童单位中出现小学两字,教师单位中出现公司两字**
 ```{r}
-danweifilter <- grep("小学|公司",df$患者工作单位)
+#幼托儿童不能小学
+danweifilter <- grep("小学",df$患者工作单位)
 #先选出有小学或公司两字的记录
 youtuodf <- df[danweifilter,]
-select(youtuodf[youtuodf$人群分类 %in% c("幼托儿童","教师"),],showcol_2)
+select(youtuodf[youtuodf$人群分类 %in% c("幼托儿童"),],showcol_2)
+#公司不能教师
+danweifilter <- grep("公司",df$患者工作单位)
+#先选出有小学或公司两字的记录
+youtuodf <- df[danweifilter,]
+select(youtuodf[youtuodf$人群分类 %in% c("教师"),],showcol_2)
 ```
 
 
