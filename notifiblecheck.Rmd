@@ -140,12 +140,16 @@ modifyfilter <- is.na(df$订正前诊断时间)
 unmodified <-  df[modifyfilter,]
 showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|报卡录入时间",names(df))
 
-select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter] & classone[modifyfilter])
+classoneresult1 <- select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter] & classone[modifyfilter])
+classoneresult1
+number  <- nrow(classoneresult1)
 
 #操作对象：有订正前诊断时间的报告卡
 modified <-  df[!modifyfilter,]
 showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
-select(modified,showcol_1) %>% filter((timefilter2[!modifyfilter ] | timefilter3[!modifyfilter]) & classone[!modifyfilter])
+classoneresult2 <- select(modified,showcol_1) %>% filter((timefilter2[!modifyfilter ] | timefilter3[!modifyfilter]) & classone[!modifyfilter])
+classoneresult2
+number  <- number + nrow(classoneresult2)
 
 ```
 
@@ -163,12 +167,18 @@ timefilter3 <- difftime(df$订正报告时间,df$诊断时间,units="hours") >= 
 modifyfilter <- is.na(df$订正前诊断时间)
 unmodified <-  df[modifyfilter,]
 showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|报卡录入时间",names(df))
-select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter])
+classoneresult3 <- select(unmodified,showcol_1) %>% filter(timefilter1[modifyfilter])
+classoneresult3 
+number  <- number + nrow(classoneresult3)
 
 #有订正前诊断时间的报告卡
 modified <-  df[!modifyfilter ,]
 showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
-select(modified,showcol_1) %>% filter(timefilter2[!modifyfilter ] | timefilter3[!modifyfilter])
+classoneresult4 <- select(modified,showcol_1) %>% filter(timefilter2[!modifyfilter ] | timefilter3[!modifyfilter])
+classoneresult4 
+number  <- number + nrow(classoneresult4)
+
+if (number >0) print("★★★★★★★★★★★★★★★★★★★★★★★★★")
 ```
 
 ```{r}
