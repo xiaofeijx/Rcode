@@ -29,7 +29,7 @@ Sys.setlocale(category = "LC_TIME", "C")
 ```{r echo=FALSE,tidy=TRUE}
 
 df <- read.csv("Report.csv",header=T,stringsAsFactors=F,na.strings = c(".",""))
-dtformat <- guess_formats(df[1,19],"Ymd HM")
+dtformat <- "%Y-%m-%d %H:%M:%S"
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format=dtformat)
 df[,23] <- as.POSIXct(df[,23],format=dtformat)
@@ -346,7 +346,7 @@ df[addressfilter,showcol_2]
 df$zj <-df$有效证件号
 df$zj <- gsub("'","",df$zj)
 df$zjf <- substring(df$zj,1,17)
-df$zjl <- substring(df$zj,18,18)
+df$zjl <- toupper(substring(df$zj,18,18))
 
 
 #7. 9 .10 .5. 8. 4. 2. 1. 6. 3. 7. 9. 10. 5. 8. 4. 2. 
@@ -397,7 +397,7 @@ for(i in 1:nrow(df)){
   } 
 }
 
-df$select <- (df$zjl == df$zjjym)
+df$select <- (df$zjl == toupper(df$zjjym))
 
 showcol_2 <- grep("患者姓名|有效证件号|^报告单位$|zjjym",names(df))
 addressfilter <- !(df$select == TRUE) | is.na(df$select)
@@ -447,7 +447,7 @@ if (file.exists("Report2.csv")) {
   print("没有外地报至本地卡片的文件，默认读取了Report.csv文件")
 }
 
-dtformat <- guess_formats(df[1,19],"Ymd HM")
+dtformat <- "%Y-%m-%d %H:%M:%S"
 df[,18] <- as.POSIXct(df[,18])
 df[,19] <- as.POSIXct(df[,19],format=dtformat)
 df[,26] <- as.POSIXct(df[,26])
@@ -537,6 +537,8 @@ select(df,showcol_2) %>% filter(jimanfilter)
 
 
 **修订内容**  
+2019年2月13日  
+1、修改身份证最后一位，允许大小写"x";2、修正日期格式  
 
 2016年8月9日  
 1、增加身份证号检测，zjjym为计算出来的校验码  
