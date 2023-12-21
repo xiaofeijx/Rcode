@@ -1,9 +1,16 @@
 #传染病报卡查重程序
-#读入所有报告数据
-library(readr)
+#操作步骤
+#1、导出传染病报告卡，读入数据；
+#2、读入"传染病分类"数据
+#3、运行所有代码
+#4、重复报卡按照传染病分类保存在默认工作目录
+
+
 library(readxl)
 library(tidyverse)
-df <- read_csv("C:\\Users\\fxf\\Documents\\报告卡2023-12-20+14_21_45.csv",
+
+#读入所有报告卡数据
+df <- read_csv("C:\\Users\\fxf\\Documents\\报告卡2023-12-21+09_24_27.csv",
                col_select = c("患者姓名","有效证件号","疾病名称","报告卡录入时间","审核状态","现住地址国标"),
                locale=locale(encoding="GBK"))
 #删除已删除卡片
@@ -24,9 +31,14 @@ count_df <- df %>% group_by(name_code,疾病大类) %>% summarise(num=n()) %>% f
 #查看有重复报卡的病种
 unique(count_df$疾病大类[!is.na(count_df$疾病大类)])
 
-#在原始卡片中选择报卡次数大于1次的报卡
+#在原始卡片中选择报卡次数大于1次的报卡,同时提取现住址国标
 cfdataall <- df[which(df$name_code %in% count_df$name_code),] %>% 
   mutate(area=str_sub(现住地址国标,1,6))
+unique(cfdataall$area)
+cfdataall$area <- factor(cfdataall$area,
+                         levels =c("330402","330411","330481","330482","330424","330421","330483") ,
+                         labels =c("南湖区","秀洲区","海宁市","平湖市","海盐县","嘉善县","桐乡市") )
+
 
 # cfdataall <- df %>% 
 #   slice(which(df$name_code %in% count_df$name_code)) %>% 
@@ -40,18 +52,18 @@ checkdisease <- unique(dfclass$疾病大类[dfclass$重卡天数 <=180 &!is.na(d
 #按照需要查重的病种筛选数据，一个一个病种根据时间进行判断
 for (diseasename in checkdisease){
   checkdf <- cfdataall %>% filter(疾病大类 == diseasename) %>% arrange(name_code,报告卡录入时间)
+  if(nrow(checkdf) <=1) print("数据行数太少")
   tianshu <- unique(dfclass$重卡天数[dfclass$疾病大类==diseasename])
+  checkdf$cf <- "首次就诊"
   
   for (i in 1:nrow(checkdf)){
     if(i==1){
       basename <- checkdf$name_code[1]
       basediadate  <- date(checkdf$报告卡录入时间[1])
-      checkdf$cf <- FALSE
-      
     } else {
       if(checkdf$name_code[i] == checkdf$name_code[i-1]){
         if( (date(checkdf$报告卡录入时间[i]) - date(checkdf$报告卡录入时间[i-1])) <= tianshu) {
-          checkdf$cf[i]<- TRUE
+          checkdf$cf[i]<- "可疑重复报卡"
         } else {
           basename <-  checkdf$name_code[i]
           basediadate<-  date(checkdf$报告卡录入时间[i])
@@ -65,3 +77,41 @@ for (diseasename in checkdisease){
   }  
   write.csv(checkdf,paste0(diseasename,".csv"))
 }
+
+
+
+
+#以下用map函数进行循环
+# duplicatecheck <- function(diseasename){
+#   checkdf <- cfdataall %>% filter(疾病大类 == diseasename) %>% arrange(name_code,报告卡录入时间)
+#   if(nrow(checkdf) <=1) print("数据行数太少")
+#   tianshu <- unique(dfclass$重卡天数[dfclass$疾病大类==diseasename])
+#   checkdf$cf <- "首次就诊"
+#   
+#   for (i in 1:nrow(checkdf)){
+#     if(i==1){
+#       basename <- checkdf$name_code[1]
+#       basediadate  <- date(checkdf$报告卡录入时间[1])
+#       
+#     } else {
+#       if(checkdf$name_code[i] == checkdf$name_code[i-1]){
+#         if( (date(checkdf$报告卡录入时间[i]) - date(checkdf$报告卡录入时间[i-1])) <= tianshu) {
+#           checkdf$cf[i]<- "可疑重复报卡"
+#         } else {
+#           basename <-  checkdf$name_code[i]
+#           basediadate<-  date(checkdf$报告卡录入时间[i])
+#           
+#         }
+#       } else {
+#         basename <-  checkdf$name_code[i]
+#         basediadate<-  date(checkdf$报告卡录入时间[i])
+#         
+#       }
+#     }
+#     
+#   }  
+#   write.csv(checkdf,paste0(diseasename,".csv"))
+# }
+# 
+# map(checkdisease,duplicatecheck)
+
