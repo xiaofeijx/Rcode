@@ -1,5 +1,5 @@
 ---
-title: "abc"
+title: "传染病报告卡数据校验报告"
 output:
   html_document:
     theme: readable
@@ -11,7 +11,7 @@ output:
 本地报告的文件请保存为"报告卡.csv"  
  
 
-需要knitr,tidyverse,xtable,lubridate,stringr,stringi等几个包,需要提前安装
+需要knitr,tidyverse,xtable,stringi等几个包,需要提前安装
 
 ---
 
@@ -25,21 +25,19 @@ library(tidyverse,
   suppressMessages() |> 
   suppressWarnings()
 library(xtable)
-library(lubridate)
-library(stringr)
-opts_chunk$set(echo=FALSE,warning=FALSE)
-Sys.setlocale(category = "LC_TIME", "C")
+opts_chunk$set(echo=FALSE,warning=FALSE, message = FALSE)
+options(tibble.print_min = Inf)
+#Sys.setlocale(category = "LC_TIME", "C")
 ```
 
 ```{r echo=FALSE,tidy=TRUE,warning=FALSE}
 
 df <- read_csv("报告卡.csv",na = c(".", "NA"),locale=locale(encoding="GBK"))
-df<- as_tibble(df)
 
 #处理年龄，全部转为岁
 
 #提取年龄最后一位
-lastchar <- substr(df$年龄,nchar(df$年龄),nchar(df$年龄))
+lastchar <- str_sub(df$年龄,nchar(df$年龄),nchar(df$年龄))
 df$age <- ifelse(lastchar=="岁",
               as.numeric(str_sub(df$年龄,1,str_length(df$年龄)-1)),
               (ifelse(lastchar=="月",
@@ -57,9 +55,10 @@ df$area <- factor(df$area)
 
 
 ```{r echo=FALSE}
-#统计导出的传报卡各疾病报告病例数
-#按地区统计
+#报告卡录入时间范围统计：
 luru <- range(df$报告卡录入时间)
+
+#订正卡的订正时间范围
 dingzheng <- NA
 if (any(!is.na(df$订正报告时间))) {
  dingzheng <- range(df$订正报告时间,na.rm=TRUE) 
@@ -73,10 +72,10 @@ if (any(!is.na(df$订正报告时间))) {
 **统计导出的传报卡各疾病报告病例数(非删除卡)**
 ```{r,results='asis'}
 #操作对象：非删除卡片
-df2 <- df[df$审核状态 != "已删除卡" ,]
-df_df <- group_by(df,审核状态,疾病名称)
-smdf <- summarise(df_df,count=n())
-arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html")
+#df2 <- df[df$审核状态 != "已删除卡" ,]
+df2 <- df %>% filter(审核状态 != "已删除卡")
+df2 %>% group_by(疾病名称) %>% summarise(报告病例数=n()) %>% 
+  arrange(desc(报告病例数)) %>% as.data.frame() %>% xtable() %>% print(type="html")
 ```
 
 
@@ -89,92 +88,149 @@ arrange(smdf,desc(count)) %>% as.data.frame() %>% xtable() %>% print(type="html"
 ```{r}
 #操作对象：非删除卡片
 #显示不含在下列常见疾病列表的病种
-commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻    疹","新型冠状病毒感染")
-rarefilter <- !(df2$疾病名称 %in% commondisease)
-showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间",names(df2))
-select(df2,all_of(showcol_2)) %>% filter(rarefilter)  
-rm(df2)
+library(readxl)
+
+infeclass <- read_xls("传染病分类.xls")
+
+importantdis <- infeclass %>% filter(重点关注==1) %>% select(名称)
+importantdis <- importantdis$名称
+# commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻    疹","新型冠状病毒感染","肺结核无病原学结果")
+show_col <- c("患者姓名","性别","年龄","疾病名称","报告单位","报告卡录入时间")
+df2 %>% filter(疾病名称 %in% importantdis ) %>% 
+  select(all_of(show_col))
 ```
 
 
 **甲类与甲类传染病报告时限检查>=2小时**
+1、显示未订正过的报卡
 ```{r}
 #显示甲类与按甲类报告的疾病报告与诊断时间超过2小时
-classone <- df$疾病名称 %in% c("鼠  疫","霍 乱","传染性非典","脊    灰","肺炭疽")
-#诊断时间与录入时间
+
+classone <- infeclass %>% filter(报告时限 == 2) %>% select(名称)
+
+classone <- classone$名称 
+#诊断时间与录入时间，看原始卡的及时性
 timefilter1 <- difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 2
-#订正前诊断时间与录入时间
+
+#订正前诊断时间与录入时间，看订正卡的及时性，诊断时间被修改了
 timefilter2 <- difftime(df$报告卡录入时间,df$订正前诊断时间,units="hours") >= 2
-#诊断时间与订正报告时间
+
+#诊断时间与订正报告时间，订正卡的及时性
 timefilter3 <- difftime(df$订正报告时间,df$诊断时间,units="hours") >= 2
 
 
 #操作对象：无订正前诊断时间的报告卡
-modifyfilter <- is.na(df$订正前诊断时间)
-unmodified <-  df[modifyfilter,]
-showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|报卡录入时间",names(df))
+show_col2 <- c("患者姓名","疾病名称","诊断时间","报告卡录入时间","报告单位")  
+#条件：甲类、时间差大于等于2小时，没有订正前诊断时间的报卡
+classone1 <- df %>% filter(疾病名称 %in% classone,
+              timefilter1,
+              is.na(df$订正前诊断时间)) %>% 
+              select(all_of(show_col2))
+classone1
+```
 
-classoneresult1 <- select(unmodified,all_of(showcol_1)) %>% filter(timefilter1[modifyfilter] & classone[modifyfilter])
-classoneresult1
-number  <- nrow(classoneresult1)
+2、显示订正过的报卡
+```{r}
+# modifyfilter <- is.na(df$订正前诊断时间)
+# unmodified <-  df[modifyfilter,]
+# showcol_1 <- grep("患者姓名|疾病名称|^疾病名称$|诊断时间|报卡录入时间",names(df))
+# 
+# classoneresult1 <- select(unmodified,all_of(showcol_1)) %>% filter(timefilter1[modifyfilter] & classone[modifyfilter])
+# classoneresult1
+# number  <- nrow(classoneresult1)
 
 #操作对象：有订正前诊断时间的报告卡
-modified <-  df[!modifyfilter,]
-showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
-classoneresult2 <- select(modified,all_of(showcol_1)) %>% filter((timefilter2[!modifyfilter ] | timefilter3[!modifyfilter]) & classone[!modifyfilter])
-classoneresult2
-number  <- number + nrow(classoneresult2)
+#条件：甲类、时间差大于等于2小时，有订正前诊断时间的报卡
+show_col3 <- c("患者姓名","疾病名称","订正前病种","报告单位","诊断时间","订正报告时间","订正前诊断时间","报告卡录入时间")  
+classone2 <- df %>% filter(疾病名称 %in% classone,
+              timefilter2 |timefilter3,
+              !is.na(df$订正前诊断时间)) %>% 
+              select(all_of(show_col3))
+  
+classone2
+
+# modified <-  df[!modifyfilter,]
+# showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
+# classoneresult2 <- select(modified,all_of(showcol_1)) %>% filter((timefilter2[!modifyfilter ] | timefilter3[!modifyfilter]) & classone[!modifyfilter])
+# classoneresult2
+# number  <- number + nrow(classoneresult2)
 
 ```
 
 
 **所有报告疾病报告时限检查>=24小时**
+1、显示未订正过的报卡
 ```{r}
 #诊断时间与录入时间
-timefilter1 <- difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 24
+timefilter4 <- difftime(df$报告卡录入时间,df$诊断时间,units="hours") >= 24
 #订正前诊断时间与录入时间
-timefilter2 <- difftime(df$报告卡录入时间,df$订正前诊断时间,units="hours") >= 24
+timefilter5 <- difftime(df$报告卡录入时间,df$订正前诊断时间,units="hours") >= 24
 #诊断时间与订正报告时间
-timefilter3 <- difftime(df$订正报告时间,df$诊断时间,units="hours") >= 24
+timefilter6 <- difftime(df$订正报告时间,df$诊断时间,units="hours") >= 24
 
 #无订正前诊断时间的报告卡
-modifyfilter <- is.na(df$订正前诊断时间)
-unmodified <-  df[modifyfilter,]
-showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|报卡录入时间",names(df))
-classoneresult3 <- select(unmodified,all_of(showcol_1)) %>% filter(timefilter1[modifyfilter])
-classoneresult3 
-number  <- number + nrow(classoneresult3)
+# modifyfilter <- is.na(df$订正前诊断时间)
+# unmodified <-  df[modifyfilter,]
+# showcol_1 <- grep("患者姓名|疾病名称|^报告单位$|诊断时间|报卡录入时间",names(df))
+# classoneresult3 <- select(unmodified,all_of(showcol_1)) %>% filter(timefilter1[modifyfilter])
+# classoneresult3 
+# number  <- number + nrow(classoneresult3)
 
+commondf1 <- df %>% filter(timefilter4,
+              is.na(df$订正前诊断时间)) %>% 
+              select(all_of(show_col2))
+commondf1
+```
+
+2、显示订正过的报卡
+```{r}
 #有订正前诊断时间的报告卡
-modified <-  df[!modifyfilter ,]
-showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
-classoneresult4 <- select(modified,all_of(showcol_1)) %>% filter(timefilter2[!modifyfilter ] | timefilter3[!modifyfilter])
-classoneresult4 
-number  <- number + nrow(classoneresult4)
+commondf2 <- df %>% filter(timefilter5|timefilter6,
+              !is.na(df$订正前诊断时间)) %>% 
+              select(all_of(show_col3))
+commondf2 
 
-if (number >0) print("★★★★★★★★★★★★★★★★★★★★★★★★★")
+
+# modified <-  df[!modifyfilter ,]
+# showcol_1 <- grep("患者姓名|疾病名称|订正前病种|^报告单位$|诊断时间|订正报告时间|订正前诊断时间|报告卡录入时间",names(df))
+# classoneresult4 <- select(modified,all_of(showcol_1)) %>% filter(timefilter2[!modifyfilter ] | timefilter3[!modifyfilter])
+# classoneresult4 
+# number  <- number + nrow(classoneresult4)
+number = nrow(classone1)+nrow(classone2)+nrow(commondf1)+nrow(commondf2)
+if (number >0) print("可能有迟报卡,请仔细查看")
 ```
 
 ```{r}
-#去除疾病名称含有“其它疾病”和“其它:”的报卡
-df <- df[substr(df$疾病名称,1,4) != "其它疾病" & substr(df$疾病名称,1,3) != "其它:",]
+#去除疾病名称含有“其它疾病”和“其它:”的报卡（小心其他感染性腹泻）
+df <- df %>% filter(str_sub(df$疾病名称,1,4) != "其它疾病",
+                    substr(df$疾病名称,1,3) != "其它:",
+                    审核状态 != "已删除卡"
+)
+
+# df <- df[substr(df$疾病名称,1,4) != "其它疾病" & substr(df$疾病名称,1,3) != "其它:",]
 #对非删除卡和非其它疾病的卡片进行其它逻辑检查
-df <- df[df$审核状态 != "已删除卡" ,]
-showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间",names(df))
+# df <- df[df$审核状态 != "已删除卡" ,]
+# showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间",names(df))
 ```
 
 
 **各地最早未审核卡与目前时间差**
 ```{r}
 #操作对象：未审核卡
-wshdf <- df[df$审核状态 == "未审核卡",]
-mutate(wshdf,time=difftime(now(),wshdf$报告卡录入时间,units="hours")) %>%
+df %>% filter(审核状态 == "未审核卡",) %>% 
+  mutate(time=difftime(now(),报告卡录入时间,units="hours")) %>%
   group_by(area) %>%
+  arrange(desc(time)) %>% 
   summarise(未审卡数=n(),最长未审核时间=first(time))
-rm(wshdf)
 ```
 
 ---
+
+**死亡病例显示**
+```{r}
+show_col2 <- c("患者姓名","疾病名称","诊断时间","死亡日期","报告单位")  
+df %>% filter(!is.na(死亡日期)) %>% select(all_of(show_col2))
+```
 
 
 **病种与分类的关系**
@@ -182,28 +238,35 @@ rm(wshdf)
 ```{r}
 #病种与诊断分类
 #只能实验室诊断
-shiyanshi <- ((df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","ＨＩＶ","涂（+）","仅培阳","脊    灰")) & !(df$病例分类 %in% c("确诊病例")))
-#只能临床诊断
-lingchuang <- (df$疾病名称 %in% c("AFP","菌（-）","猩 红 热","流行性腮腺炎")) & (df$病例分类 !="临床诊断病例")
-#只能疑似病例
-weitanjian <- (df$疾病名称 == "未痰检") & (df$病例分类 !="疑似病例")
-#乙肝只能实验室和病原携带者
-yigan <- df$疾病名称== "乙肝" & !(df$病例分类 %in% c("确诊病例","病原携带者"))
-#麻疹只能报疑似和实验室
-mazhen <- df$疾病名称 %in% c("麻    疹","风疹") &  df$病例分类 == "临床诊断病例"
-#显示除麻疹、未痰检和其它疾病的疑似病例
-yishi <- !(df$疾病名称 %in% c("未痰检","麻    疹","风疹","其它疾病:")) & (df$病例分类 =="疑似病例")
+shiyanshi <- df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","HIV","病原学阳性","脊灰") & df$病例分类 != "确诊病例"
 
-showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|病例分类|^报告单位$|报卡录入时间",names(df))
+#只能临床诊断
+lingchuang <- (df$疾病名称 %in% c("AFP","病原学阴性","猩红热","流行性腮腺炎")) & (df$病例分类 !="临床诊断病例")
+
+#只能疑似病例
+weitanjian <- (df$疾病名称 == "无病原学结果") & (df$病例分类 !="疑似病例")
+
+#乙肝只能实验室
+yigan <- df$疾病名称== "乙肝" & df$病例分类 != "确诊病例"
+
+#麻疹只能报疑似和实验室
+mazhen <- df$疾病名称 %in% c("麻疹","风疹") &  df$病例分类 == "临床诊断病例"
+
+#显示除麻疹、未痰检和其它疾病的疑似病例
+yishi <- !(df$疾病名称 %in% c("无病原学结果","麻疹","风疹","其它疾病:")) & (df$病例分类 =="疑似病例")
+
+
 diseasefilter <- shiyanshi | lingchuang | weitanjian | yigan | mazhen | yishi
-select(df,all_of(showcol_2)) %>% filter(diseasefilter)
+show_col2 <- c("患者姓名","疾病名称","病例分类","报告卡录入时间","报告单位")  
+df %>% filter(diseasefilter) %>% select(all_of(show_col2 ))
+
 ```
 
 **乙肝、血吸虫病，丙肝急慢性不能为未分类**
 ```{r}
 jimanfilter <- (df$疾病名称 %in% c("乙肝","血吸虫病","丙肝")) & (df$病例分类2 =="未分类")
-showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|病例分类2|^报告单位$|报卡录入时间",names(df))
-select(df,all_of(showcol_2)) %>% filter(jimanfilter)
+show_col2 <- c("患者姓名","疾病名称","病例分类","病例分类2","报告卡录入时间","报告单位") 
+df %>% filter(jimanfilter) %>% select(all_of(show_col2 )) 
 ```
 
 ---
@@ -243,8 +306,10 @@ select(df,showcol_2) %>% filter(agefilter4)
 poshangfeng <- df$疾病名称 =="新生儿破伤风" & df$age >28/365
 tcmeidu <-  df$疾病名称 =="胎传梅毒" & df$age >5
 szkb <-  df$疾病名称 =="手足口病" & df$age >30
-xhr <-  df$疾病名称 %in% c("猩 红 热","AFP") & df$age >15
-otherfilter <- df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","ＨＩＶ","III期梅毒","隐性梅毒","艾滋病","涂（+）","菌（-）","乙肝","甲肝","戊肝","丙肝","肝炎（未分型）") & df$age <15
+xhr <-  df$疾病名称 %in% c("猩红热","AFP") & df$age >15
+
+otherfilter <- df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","HIV","III期梅毒","隐性梅毒","艾滋病","病原学阳性","病原学阴性","乙肝","甲肝","戊肝","丙肝","肝炎（未分型）") & df$age <15
+
 select(df,showcol_2) %>% filter(poshangfeng|tcmeidu|szkb|otherfilter|xhr)
 ```
 
@@ -264,22 +329,20 @@ select(df,showcol_2) %>% filter(occufilter)
 **幼托儿童单位中出现小学两字,教师单位中出现公司两字**
 ```{r}
 #幼托儿童不能小学
-danweifilter <- grep("小学",df$患者工作单位)
-#先选出有小学或公司两字的记录
-youtuodf <- df[danweifilter,]
-select(youtuodf[youtuodf$人群分类 %in% c("幼托儿童"),],showcol_2)
+
+df %>% filter(str_detect(患者工作单位,"小学") & 人群分类=="幼托儿童") %>% select(all_of(showcol_2))
+
 #公司不能教师
-danweifilter <- grep("公司",df$患者工作单位)
-#先选出有小学或公司两字的记录
-youtuodf <- df[danweifilter,]
-select(youtuodf[youtuodf$人群分类 %in% c("教师"),],showcol_2)
+
+df %>% filter(str_detect(患者工作单位,"公司") & 人群分类=="教师") %>% select(all_of(showcol_2))
+
 ```
 
 
 
 **填了单位，但人群分类为保育员及保姆,农民,散居儿童,家务及待业的**
 ```{r}
-occufilter2 <- (df$人群分类 %in% c("保育员及保姆","农民","散居儿童","家务及待业")) & (!is.na(df$患者工作单位) & df$患者工作单位!="无")
+occufilter2 <- (df$人群分类 %in% c("保育员及保姆","农民","散居儿童","家务及待业")) & !is.na(df$患者工作单位)
 select(df,showcol_2) %>% filter(occufilter2)
 ```
 **罕见人群分类，牧民和鱼船名**
@@ -292,13 +355,15 @@ select(df,showcol_2) %>% filter(occufilter3)
 **14岁以下填电话号码和家长姓名**
 ```{r}
 showcol_2 <- grep("患者姓名|性别|年龄|患儿家长姓名|联系电话|^报告单位$|报卡录入时间",names(df))
-agephonefilter <- df$age <=14 & (((nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8) | is.na(df$联系电话)) | nchar(df$患儿家长姓名)<2 | is.na(df$患儿家长姓名))
-select(df,showcol_2) %>% filter(occufilter3)
+agephonefilter <- df$age <=14 & ((nchar(df$联系电话)!= 11 & nchar(df$联系电话)!= 8) | is.na(df$联系电话)) & (nchar(df$患儿家长姓名) < 2 | is.na(df$患儿家长姓名))
+
+select(df,showcol_2) %>% filter(agephonefilter)
+
 ```
 
 **填了家长姓名却大于14岁**
 ```{r}
-parentfilter <- df$age >14 & (nchar(df$患儿家长姓名)>= 2 & !is.na(df$患儿家长姓名))
+parentfilter <- df$age >14 & df$age <60 &(nchar(df$患儿家长姓名)>= 2 & !is.na(df$患儿家长姓名))
 select(df,showcol_2) %>% filter(parentfilter)
 ```
 
@@ -308,8 +373,8 @@ select(df,showcol_2) %>% filter(parentfilter)
 **不详乡镇**
 ```{r}
 showcol_2 <- grep("患者姓名|性别|年龄|现住详细地址|^报告单位$|报卡录入时间",names(df))
-addressfilter <- grep("不详",df$现住详细地址)
-df[addressfilter,showcol_2]
+
+df %>% filter(str_detect(现住详细地址,"不详")) %>% select(all_of(showcol_2 ))
 
 ```
 
@@ -387,8 +452,11 @@ df[addressfilter,showcol_2]
 ```{r}
 #流行性感冒、其他感染性腹泻病、肝炎未分型，伤寒副伤寒、菌痢病例中，如为确诊病例，须在备注栏中填写具体的病原分型；输入性疟疾、登革热等疾病须注明输入地。卵型疟、三日疟报于疟疾“未分型”中，同时在备注栏中注明
 beizhufilter1 <- df$疾病名称 %in% c("流行性感冒","其它感染性腹泻病","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒") & (df$病例分类 =="确诊病例") & (nchar(df$备注) < 2 | is.na(df$备注))
+
 beizhufilter2 <- df$疾病名称 %in% c("间日疟","恶性疟","疟疾（未分型）","登革热") & (nchar(df$备注) <=2 | is.na(df$备注))
+
 beizhufilter <- beizhufilter1 | beizhufilter2
+
 showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间|备注",names(df))
 select(df,showcol_2) %>% filter(beizhufilter)
 ```
@@ -396,8 +464,9 @@ select(df,showcol_2) %>% filter(beizhufilter)
 **电话号码检查**
 ```{r}
 #只检查不是性病、其它感染性腹泻的报卡
-phonefilter <- df$疾病名称 %in% c("淋    病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","隐性梅毒","尖锐湿疣","生殖器疱疹","生殖道沙眼衣原体感染","其它疾病:","其它感染性腹泻病")
-df <- df[!phonefilter,]
+phonefilter <- df$疾病名称 %in% c("淋病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","隐性梅毒","尖锐湿疣","生殖器疱疹","生殖道沙眼衣原体感染","其它疾病:","其它感染性腹泻病")
+
+df <- df %>% filter(!phonefilter)
 #对于填了电话号码的报卡，显示电话号码不是11位或8位的报卡
 
 #手机号码：1开头11位,固定电话8位、0573-88888888和057388888888模式
