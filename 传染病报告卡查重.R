@@ -47,7 +47,8 @@ cfdataall$area <- factor(cfdataall$area,
 #筛选查重时间少于等于180天的病种
 checkdisease <- unique(dfclass$疾病大类[dfclass$重卡天数 <=180 &!is.na(dfclass$重卡天数) & dfclass$疾病大类 %in% unique(count_df$疾病大类[!is.na(count_df$疾病大类)])])
 
-
+#记录时间
+now <- str_replace_all(str_sub(as.character(now()),1,19),pattern = "[ :]",replacement = "+")
 #开始查重
 #按照需要查重的病种筛选数据，一个一个病种根据时间进行判断
 for (diseasename in checkdisease){
@@ -75,7 +76,7 @@ for (diseasename in checkdisease){
     }
     
   }  
-  write.csv(checkdf,paste0(diseasename,".csv"))
+  write.csv(checkdf,paste0(diseasename,now,".csv"))
 }
 
 
