@@ -20,7 +20,7 @@ output:
 本地报告的文件请保存为"报告卡.csv"  
  
 
-需要knitr,tidyverse,xtable等几个包,需要提前安装
+需要knitr,tidyverse,xtable,rmarkdown等几个包,需要提前安装
 
 ---
 
@@ -41,7 +41,7 @@ options(tibble.print_min = Inf)
 
 ```{r echo=FALSE,tidy=TRUE,warning=FALSE}
 
-df <- read_csv("报告卡.csv",na = c(".", "NA",""),locale=locale(encoding="GBK"))
+df <- read_csv("报告卡2023-12-27+13_36_10.csv",na = c(".", "NA",""),locale=locale(encoding="GBK"))
 
 #处理年龄，全部转为岁
 
@@ -81,9 +81,8 @@ if (any(!is.na(df$订正报告时间))) {
 **统计导出的传报卡各疾病报告病例数(非删除卡)**
 ```{r,results='asis'}
 #操作对象：非删除卡片
-#df2 <- df[df$审核状态 != "已删除卡" ,]
-df2 <- df %>% filter(审核状态 != "已删除卡")
-df2 %>% group_by(疾病名称) %>% summarise(报告病例数=n()) %>% 
+df2 <- df[df$审核状态 != "已删除卡" ,]
+df2 %>% filter(审核状态 != "已删除卡") %>% group_by(疾病名称) %>% summarise(报告病例数=n()) %>% 
   arrange(desc(报告病例数)) %>% as.data.frame() %>% xtable() %>% print(type="html")
 ```
 
@@ -106,6 +105,7 @@ importantdis <- importantdis$名称
 # commondisease <- c("艾滋病","ＨＩＶ","甲肝","乙肝","丙肝","戊肝","肝炎（未分型）","细菌性痢疾","伤 寒","副伤寒","猩 红 热","淋病","Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","流行性感冒","流行性腮腺炎","风疹","急性出血性结膜炎","尖锐湿疣","生殖器疱疹","结核性胸膜炎","水痘","生殖道沙眼衣原体感染","其它疾病:","手足口病","其它感染性腹泻病","涂（+）","菌（-）","未痰检","麻    疹","新型冠状病毒感染","肺结核无病原学结果")
 show_col <- c("患者姓名","性别","年龄","疾病名称","报告单位","报告卡录入时间")
 df2 %>% filter(疾病名称 %in% importantdis ) %>% 
+  arrange(疾病名称) %>% 
   select(all_of(show_col))
 ```
 
@@ -241,7 +241,9 @@ df %>% filter(审核状态 == "未审核卡",) %>%
 **死亡病例显示**
 ```{r}
 show_col2 <- c("患者姓名","疾病名称","诊断时间","死亡日期","报告单位")  
-df %>% filter(!is.na(死亡日期)) %>% select(all_of(show_col2))
+df %>% filter(!is.na(死亡日期)) %>%
+  arrange(疾病名称) %>% 
+select(all_of(show_col2))
 ```
 
 
@@ -250,27 +252,28 @@ df %>% filter(!is.na(死亡日期)) %>% select(all_of(show_col2))
 ```{r}
 #病种与诊断分类
 #只能实验室诊断
-shiyanshi <- df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","HIV","肺结核病原学阳性","脊灰") & df$病例分类 != "确诊病例"
+shiyanshi <- df$疾病名称 %in% c("Ⅰ期梅毒","Ⅱ期梅毒","III期梅毒","胎传梅毒","隐性梅毒","淋    病","艾滋病","HIV","肺结核病原学阳性","脊灰","乙肝") & df$病例分类 != "确诊病例"
 
 #只能临床诊断
 lingchuang <- (df$疾病名称 %in% c("AFP","猩红热","流行性腮腺炎")) & (df$病例分类 !="临床诊断病例")
 
 #只能疑似病例
-weitanjian <- (df$疾病名称 == "肺结核无病原学结果") & (df$病例分类 !="疑似病例")
+#weitanjian <- (df$疾病名称 == "肺结核无病原学结果") & (df$病例分类 !="疑似病例")
 
 #乙肝只能实验室
-yigan <- df$疾病名称== "乙肝" & df$病例分类 != "确诊病例"
+#yigan <- df$疾病名称== "乙肝" & df$病例分类 != "确诊病例"
 
 #麻疹只能报疑似和实验室
 mazhen <- df$疾病名称 %in% c("麻疹","风疹") &  df$病例分类 == "临床诊断病例"
 
 #显示除麻疹、未痰检和其它疾病的疑似病例
-yishi <- !(df$疾病名称 %in% c("肺结核病原学阴性","肺结核无病原学结果","麻疹","风疹","其它疾病:")) & (df$病例分类 =="疑似病例")
+yishi <- !(df$疾病名称 %in% c("肺结核无病原学结果","麻疹","风疹","其它疾病:")) & (df$病例分类 =="疑似病例")
 
 
-diseasefilter <- shiyanshi | lingchuang | weitanjian | yigan | mazhen | yishi
+diseasefilter <- shiyanshi | lingchuang | mazhen | yishi
 show_col2 <- c("患者姓名","疾病名称","病例分类","报告卡录入时间","报告单位")  
-df %>% filter(diseasefilter) %>% select(all_of(show_col2 ))
+df <- df %>% filter(审核状态!="已删除卡")
+df %>% filter(diseasefilter,审核状态!="已删除卡") %>% select(all_of(show_col2 ))
 
 ```
 
@@ -294,19 +297,19 @@ select(df,showcol_2) %>% filter(agefilter1)
 
 **显示2岁以下不是散居和5岁以上为散居**
 ```{r}
-agefilter2 <- (!(df$人群分类 %in% c("散居儿童")) & df$age < 2) | ((df$人群分类 %in% c("散居儿童")) & df$age>=5) 
+agefilter2 <- (!(df$人群分类 == "散居儿童") & df$age < 2) | ((df$人群分类 =="散居儿童") & df$age>=5) 
 select(df,showcol_2) %>% filter(agefilter2)
 ```
 
 **显示4岁到6岁不是幼托儿童，显示7岁以上为幼托儿童**
 ```{r}
-agefilter3 <- !(df$人群分类 %in% c("幼托儿童")) & (df$age>4 & df$age <=6) | ((df$人群分类 %in% c("幼托儿童")) & df$age>=7)
+agefilter3 <- df$人群分类 !="幼托儿童" & (df$age>4 & df$age <6) | (df$人群分类 == "幼托儿童" & df$age>=7)
 select(df,showcol_2) %>% filter(agefilter3)
 ```
 
 **显示7-14岁不是学生**
 ```{r}
-agefilter4 <- !(df$人群分类 %in% c("学生")) & (df$age>=7 & df $age <=14)
+agefilter4 <- df$人群分类 !="学生" & (df$age>=7 & df $age <=14)
 select(df,showcol_2) %>% filter(agefilter4)
 ```
 
@@ -334,7 +337,9 @@ select(df,showcol_2) %>% filter(poshangfeng|tcmeidu|szkb|otherfilter|xhr)
 ```{r}
 #幼托儿童,学生,干部职员,工人,民工,教师,医务人员不填单位
 showcol_2 <- grep("患者姓名|性别|年龄|人群分类|患者工作单位|^报告单位$|报卡录入时间",names(df))
-occufilter <- (df$人群分类 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & (nchar(df$患者工作单位)<=2 | (df$患者工作单位=="不详") |(df$患者工作单位=="无") |(df$患者工作单位=="不清楚") | is.na(df$患者工作单位))
+occufilter <- (df$人群分类 %in% c("幼托儿童","学生","干部职员","工人","民工","教师","医务人员")) & ((nchar(df$患者工作单位)<2 | (df$患者工作单位=="不详") |(df$患者工作单位=="不清楚") | is.na(df$患者工作单位))|
+  str_detect(df$患者工作单位,"提供") |
+     str_detect(df$患者工作单位,"wu"))
 select(df,showcol_2) %>% filter(occufilter)
 ```
 
@@ -343,9 +348,11 @@ select(df,showcol_2) %>% filter(occufilter)
 #幼托儿童不能小学
 
 df %>% filter(str_detect(患者工作单位,"小学") & 人群分类=="幼托儿童") %>% select(all_of(showcol_2))
+```
+
 
 #公司不能教师
-
+```{r}
 df %>% filter(str_detect(患者工作单位,"公司") & 人群分类=="教师") %>% select(all_of(showcol_2))
 
 ```
@@ -355,7 +362,8 @@ df %>% filter(str_detect(患者工作单位,"公司") & 人群分类=="教师") 
 **填了单位，但人群分类为保育员及保姆,农民,散居儿童,家务及待业的**
 ```{r}
 occufilter2 <- (df$人群分类 %in% c("保育员及保姆","农民","散居儿童","家务及待业")) & (
-  df$患者工作单位 != "无"  & !is.na(df$患者工作单位))
+  df$患者工作单位 != "无"  & !is.na(df$患者工作单位)&
+    df$患者工作单位 != "-" & df$患者工作单位 != "无-" )
 select(df,showcol_2) %>% filter(occufilter2)
 ```
 **罕见人群分类，牧民和鱼船名**
@@ -379,12 +387,12 @@ select(df,showcol_2) %>% filter( agephonefilter1 | agephonefilter2 )
 
 ```
 
-**填了家长姓名却大于14岁**
+<!-- **填了家长姓名却大于14岁** -->
 ```{r}
 #判断条件
 # 年龄在14至60岁之间，但是填了家长姓名的
-parentfilter <- df$age >14 & df$age <60 &(nchar(df$患儿家长姓名)>= 2 & !is.na(df$患儿家长姓名))
-select(df,showcol_2) %>% filter(parentfilter)
+#parentfilter <- df$age >14 & df$age <60 &(nchar(df$患儿家长姓名)>= 2 & !is.na(df$患儿家长姓名))
+#select(df,showcol_2) %>% filter(parentfilter)
 ```
 
 
@@ -395,7 +403,7 @@ select(df,showcol_2) %>% filter(parentfilter)
 #现住详细地址中不详不详两个字
 showcol_2 <- grep("患者姓名|性别|年龄|现住详细地址|^报告单位$|报卡录入时间",names(df))
 
-df %>% filter(str_detect(现住详细地址,"不详")) %>% select(all_of(showcol_2 ))
+df %>% filter(str_detect(现住详细地址,"不详乡镇")) %>% select(all_of(showcol_2 ))
 
 ```
 
@@ -473,10 +481,17 @@ df[addressfilter,showcol_2]
 **身份证号码生日与生日的校验**
 ```{r}
 #提取身份证为18位的卡片中，身份证的日期部分与出生日期进行核对
-df4 <- df %>% filter(select==TRUE) %>% select(患者姓名,疾病名称,报告单位,出生日期,zj) %>%   mutate(sfzsr = ymd(str_sub(zj,7,14)),出生日期=ymd(出生日期)) %>% select(患者姓名,疾病名称,报告单位,出生日期,sfzsr) %>% filter(sfzsr!=出生日期) 
-print(df4,width = Inf)
+df4 <- df %>% filter(select==TRUE) %>% select(患者姓名,疾病名称,报告单位,出生日期,zj) %>%   mutate(sfzsr = ymd(str_sub(zj,7,14)),
+      出生日期=ymd(出生日期),
+      age2=出生日期-sfzsr) %>% filter(sfzsr!=出生日期,age2<14*365) %>%  select(患者姓名,疾病名称,报告单位,出生日期,sfzsr)
+df4 
 
 ```
+
+
+
+
+
 
 **身份证号码和病人属于校验**
 ```{r}
@@ -525,6 +540,15 @@ phonenumber <- !(cellphone | phone) | is.na(df$联系电话)
 showcol_2 <- grep("患者姓名|性别|年龄|疾病名称|^报告单位$|报卡录入时间|联系电话",names(df))
 select(df,showcol_2) %>% filter(phonenumber)
 ```
+
+
+
+```{r}
+df %>% filter(!(患者工作单位 %in% c("无","-","无-")) & !is.na(患者工作单位)) %>% group_by(疾病名称,患者工作单位) %>%
+  summarise(病例数=n()) %>% arrange(desc(病例数)) %>% 
+  filter(病例数>10)
+```
+
 
 ----
 
