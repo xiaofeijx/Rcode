@@ -11,7 +11,7 @@ library(tidyverse)
 library(pinyin)
 
 #读入所有报告卡数据
-df <- read_csv("C:\\Users\\fxf\\Documents\\报告卡2024-01-09+08_26_10.csv",
+df <- read_csv("C:\\Users\\fxf\\Documents\\报告卡(1).csv",
                col_select = c("患者姓名","有效证件号","疾病名称","报告卡录入时间","审核状态","现住地址国标"),
                locale=locale(encoding="GBK"))
 #删除已删除卡片
@@ -26,8 +26,8 @@ diseasemap <- dfclass %>% select(名称,疾病大类)
 df <- df %>% left_join(diseasemap,by=join_by(疾病名称==名称))
 
 #按照身份证号和疾病大类统计出现次数，并且筛选出现大于1次的数据
-#count_df <- df %>% group_by(name_code,疾病大类) %>% summarise(num=n()) %>% filter(num>=2)
-count_df <- df[duplicated(df$有效证件号),]
+count_df <- df %>% group_by(有效证件号,疾病大类) %>% summarise(num=n()) %>% filter(num>=2)
+#count_df <- df[duplicated(df$有效证件号),]
 
 #查看有重复报卡的病种
 unique(count_df$疾病大类[!is.na(count_df$疾病大类)])
