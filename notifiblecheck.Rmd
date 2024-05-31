@@ -41,7 +41,7 @@ options(tibble.print_min = Inf)
 
 ```{r echo=FALSE,tidy=TRUE,warning=FALSE}
 
-df <- read_csv("C:\\Users\\fxf\\Documents\\报告卡2024-02-09+09_28_37(1).csv",na = c(".", "NA",""),locale=locale(encoding="GBK"))
+df <- read_csv("报告卡2024-02-09+15_18_53.csv",na = c(".", "NA",""),locale=locale(encoding="GBK"))
 
 #处理年龄，全部转为岁
 

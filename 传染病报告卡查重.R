@@ -87,6 +87,37 @@ for (diseasename in checkdisease){
   write.csv(checkdf,paste0(diseasename,now,".csv"))
 }
 
+#查重第二版，与首次出现的数据对比
+now <- str_replace_all(str_sub(as.character(now()),1,19),pattern = "[ :]",replacement = "+")
+for (diseasename in checkdisease){
+  checkdf <- cfdataall %>% filter(疾病大类 == diseasename) %>% arrange(有效证件号,报告卡录入时间)
+  if(nrow(checkdf) <=1) print("数据行数太少")
+  tianshu <- unique(dfclass$重卡天数[dfclass$疾病大类==diseasename])
+  checkdf$cf <- "首次就诊"
+for (i in 1:nrow(checkdf)){
+  if(i==1){
+    basename <- checkdf$有效证件号[1]
+    basediadate  <- date(checkdf$报告卡录入时间[1])
+  } else {
+    if(checkdf$有效证件号[i] == basename){
+      if( (date(checkdf$报告卡录入时间[i]) - date(basediadate)) <= tianshu) {
+        if( sum(unlist(checkdf$namesp[i]) %in% unlist(checkdf$namesp[i-1]))>=2 
+            |checkdf$pinyin[i] ==checkdf$pinyin[i-1])       checkdf$cf[i]<- "可疑重复报卡"
+      } else {
+        basename <-  checkdf$有效证件号[i]
+        basediadate<-  date(checkdf$报告卡录入时间[i])
+      }
+    } else {
+      basename <-  checkdf$有效证件号[i]
+      basediadate<-  date(checkdf$报告卡录入时间[i])
+    }
+  }
+  
+}  
+checkdf <- checkdf |> select(-namesp)
+write.csv(checkdf,paste0(diseasename,now,".csv"))
+}
+
 
 
 

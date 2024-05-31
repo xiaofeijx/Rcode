@@ -194,7 +194,7 @@ library(patchwork)
 #病例数分布
 p1 <- ggplot(lggp,aes(x=lurusj,y=renshu,fill=bd))+
   geom_col()+
-  labs(x="",y="报告病例数",fill="病毒分类")+
+  labs(title="嘉兴市流感报告病例病毒检出情况",x="",y="报告病例数",fill="病毒分类")+
   scale_x_date(date_breaks = "7 day",date_labels = "%m-%d")+
   scale_y_continuous(breaks = c(500,1000,1500,2000,2500))+
   scale_fill_manual(limits = c("甲流", "乙流", "混合感染","未分型"),
@@ -202,11 +202,13 @@ p1 <- ggplot(lggp,aes(x=lurusj,y=renshu,fill=bd))+
   theme(axis.text.x = element_text(hjust = 0.5, vjust = .5, size=8,family="times"),
         axis.line = element_line(colour = "black"),
         panel.background = element_blank(),
-        legend.position = "top" ,
+        #legend.position = "top" ,
         panel.grid.major.y = element_line(colour = "grey85"),
         text = element_text(family = "st"),
-        legend.text = element_text(size=10),
-        legend.title = element_text(size=11,face = "bold"))
+        legend.text = element_text(size=9),
+        #legend.title = element_text(size=10,face = "bold"),
+        legend.position = c(.9, .75),
+        plot.title = element_text(hjust = 0.5,size = 15,face = "bold"))
 
 
 p2 <- ggplot(lggp,aes(x=lurusj,y=renshu,fill=bd))+
@@ -282,3 +284,76 @@ ggplot(data=lgweek,aes(x=as.character(week),y=renshu,fill=bd))+
         text = element_text(family = "st"),
         legend.text = element_text(size=10),
         legend.title = element_text(size=11,face = "bold"))
+
+
+#流感和新冠
+library(readr)
+library(tidyverse)
+#library(ggsci)
+#library(paletteer)
+lg <- read_csv("C:\\Users\\fxf\\Documents\\流感报告卡2024-02-09+08_36_41.csv",
+               col_select=c(年龄,性别,疾病名称,县区审核时间,备注),
+               locale=locale(encoding="GBK")) |>  
+  #  select(年龄,县区审核时间,备注) %>%
+  mutate(县区审核时间= as.Date(县区审核时间)) |>  
+  filter(县区审核时间>=ymd("2023-11-1")&县区审核时间 <=ymd("2024-02-09")) |> 
+  arrange(desc(县区审核时间))
+
+sg <- read_csv("C:\\Users\\fxf\\Documents\\新冠报告卡2024-02-09+08_38_14.csv",
+               col_select=c(年龄,性别,疾病名称,县区审核时间,备注),
+               locale=locale(encoding="GBK")) |>  
+  #  select(年龄,县区审核时间,备注) %>%
+  mutate(县区审核时间= as.Date(县区审核时间)) |>  
+  filter(县区审核时间>=ymd("2023-11-1")&县区审核时间 <=ymd("2024-02-09")) |> 
+  arrange(desc(县区审核时间))
+
+all <- bind_rows(lg,sg)
+
+
+#lg$县区审核时间 <- as.Date(lg$县区审核时间)
+pacman::p_load(showtext)
+# font_add("msyh", "msyh")
+showtext::showtext_auto()
+a <- font_files()
+font_add("st", "simsun.ttc")
+font_add("song","STSONG.TTF")
+font_add("times","times.ttf")
+
+ggplot(data=all,aes(x=县区审核时间))+
+  geom_histogram(aes(fill=疾病名称),binwidth = 1)+
+  scale_fill_manual(values=c(流行性感冒="#33a02c",新型冠状病毒感染="#1f78b4"))+
+  labs(y="报告病例数")+
+  guides(fill = FALSE)+
+  scale_x_date(date_breaks = "7 day",date_labels = "%m月\n%d日")+
+  facet_grid(疾病名称~.,scales = "free")+
+  theme(text = element_text(family = "st"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank(),      
+)
+
+
+data_sum <- all |> group_by(县区审核时间,疾病名称) |> 
+  summarise(n=n()) 
+
+
+ggplot(data=data_sum,aes(x=县区审核时间,y=n))+
+  geom_col(aes(fill=疾病名称))+
+  scale_fill_manual(values=c(流行性感冒="#33a02c",新型冠状病毒感染="#1f78b4"))+
+  labs(y="报告病例数")+
+  guides(fill = FALSE)+
+  scale_x_date(date_breaks = "7 day",date_labels = "%m月\n%d日")+
+  facet_grid(疾病名称~.,scales = "free")+
+  theme(text = element_text(family = "st"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank(),      
+  )
+
+
+ggplot(data=lg,aes(x=县区审核时间))+
+  geom_bar()+
+  scale_x_binned()
+
+ggplot(mtcars) +
+  geom_bar(aes(mpg)) +
+  scale_x_binned()
+  

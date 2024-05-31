@@ -53,3 +53,5 @@ plot(GTn,col= "blue",lwd = 4,cex.axis= 1.8,
 
 casedata <- read.csv("r0.csv")
 R0EG <- est.R0.EG(casedata$case,GTn,begin=1, end =11)
+
+

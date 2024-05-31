@@ -1,0 +1,127 @@
+---
+title: "RforMap"
+author: "富小飞"
+date: "2024-02-07"
+output:
+  html_document: default
+  word_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 需要使用的包
+
+-   `sf:` 读取处理`shp`文件
+
+-   `ggplot2:`画地图
+
+-   `ggspatial:`添加指北针、比例尺
+
+-   `mapchina:`具有县区级以上的地图
+
+-   `showtext：`添加系统字体
+
+    ```{r message=FALSE, warning=FALSE}
+    library(sf) #打开shp文件
+    library(ggplot2) #画柱形图
+    library(ggspatial) #添加指北针比例尺
+    library(mapchina)
+    library(tidyverse)
+    library(showtext)
+    ```
+
+添加系统字体：
+
+```{r}
+showtext_auto()
+
+#添加宋体
+font_add("st", "simsun.ttc")
+```
+
+## 读取地图数据
+
+```{r }
+#筛选嘉兴的地图数据
+jxmap<- china %>% filter(Name_Perfecture == "嘉兴市")
+
+#使用ggplot2画图
+ggplot(jxmap) + 
+  geom_sf() + 
+  coord_sf() 
+
+```
+
+下面我们对上图进行修改
+
+-   县区按照发病率涂色
+
+-   在图中显示县区名称
+
+-   添加图例
+
+-   添加指北针、比例尺
+
+-   删除经纬度
+
+## 录入发病率数据
+
+先看一下县区在数据框中的顺序
+
+```{r pressure, echo=FALSE}
+jxmap$Name_County
+```
+
+根据顺序我们创建一个新列，录入发病率数据（假设为/10万）。如果县区非常多，我们可以在excel中计算好发病率，利用数据框的合并功能。
+
+```{r}
+jxmap <-  jxmap |> 
+  mutate(incidence=c(110,120,130,140,150,160,135)) #新列：incidence
+
+#如果要画五色图的话，把发病率数据转化为分类数据，共五个分类
+
+jxmap <-  jxmap |> 
+  mutate(incidence_cat=cut(incidence,c(105,115,125,135,145,170)))
+#incidence_cat为分类变量
+
+#查看一下数据是否正确
+jxmap |> select(incidence,incidence_cat)
+
+```
+
+计算县区名称在地区中显示的位置
+
+```{r}
+#计算每个县区的中心位置
+name_points<- st_centroid(jxmap)
+#在jxmap上增加两列，分别是县区名称在地图中显示的经纬度：X,Y
+jxmap <- cbind(jxmap,st_coordinates(name_points))
+```
+
+## 画图
+
+```{r}
+ggplot(jxmap)+                #ggplot直接作图必须是数据框数据
+  geom_sf(color='black',    #线条颜色
+          aes(fill=incidence_cat),        #填充色 发病率：incidence_cat
+          alpha=0.7,size=0.8)+ #地图线条粗细
+  annotation_scale(location = "bl", width_hint = 0.3) + #添加比例尺并调整位置及长度
+  annotation_north_arrow(location = "tl", which_north = F, 
+                         pad_x = unit(0.05, "in"), pad_y = unit(0.05, "in"),
+                         style = north_arrow_fancy_orienteering)+
+  scale_fill_manual(values = c("green","blue","yellow","orange","red"),aesthetics="fill")+#指定五色
+  geom_text(aes(x=X,y=Y,label=Name_County),size=8,family = "st")+#县区名：Name_County
+  labs(fill = "年发病率（/10万）",x="",y="")+
+  theme(axis.text = element_blank(), #横纵坐标标签
+        axis.ticks = element_blank(),#横纵坐标刻度
+        axis.line = element_blank(),#横纵坐标线条
+        panel.background = element_blank(),#背景
+        text = element_text(family = "st"),#字体为宋体
+        legend.text = element_text(size=13),#图例项目字体大小
+        legend.title = element_text(size=15)#图例标题字体大小
+          ) #删除横纵坐标标题、坐标轴、背景等
+```
